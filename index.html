@@ -3,70 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finanz-Manager Pro</title>
+    <title>Finanz-Manager</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        :root { --primary: #27ae60; --danger: #e74c3c; --dark: #34495e; --bg: #f4f7f6; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: #2c3e50; }
-        .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); max-width: 450px; margin: auto; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 15px; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat { background: #eee; padding: 10px; border-radius: 8px; text-align: center; }
+        .stat b { display: block; font-size: 0.7em; color: #666; }
+        .stat span { font-weight: bold; color: #27ae60; }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .stat { background: #f8fafb; padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #edf2f4; }
-        .stat b { display: block; color: #7f8c8d; font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat span { font-size: 1.15em; font-weight: bold; color: var(--primary); }
+        label { display: block; margin: 10px 0 3px 0; font-size: 0.8em; font-weight: bold; color: #555; }
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; margin-bottom: 5px; }
         
-        label { font-size: 0.85em; color: #7f8c8d; margin: 12px 0 4px 5px; display: block; font-weight: 600; }
-        input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #dce4e6; box-sizing: border-box; font-size: 16px; outline: none; transition: 0.2s; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1); }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        button { padding: 15px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-ein { background: #27ae60; }
+        .btn-aus { background: #e74c3c; }
         
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button { width: 100%; padding: 14px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; }
-        button:active { transform: scale(0.96); opacity: 0.9; }
-        
-        .btn-ein { background: var(--primary); }
-        .btn-aus { background: var(--danger); }
-        
-        .umbuchung-box { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e0; margin-top: 25px; }
-        .btn-umbuchung { background: var(--dark); margin-top: 10px; width: 100%; }
-        
-        .status { text-align: center; color: #94a3b8; font-size: 13px; margin-top: 15px; min-height: 18px; }
-        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+        .umbuchung-box { background: #f0f0f0; padding: 15px; border-radius: 10px; border: 1px dashed #999; margin-top: 20px; }
+        .btn-umb { background: #34495e; width: 100%; margin-top: 10px; }
+        .status { text-align: center; color: #7f8c8d; font-size: 13px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 style="margin: 0; font-size: 1.4em;">Kontostände</h2>
-        <button onclick="loadStats()" style="width: auto; padding: 6px 12px; background: #eee; color: #666; font-size: 12px;">🔄 Laden</button>
+    <div style="display: flex; justify-content: space-between;">
+        <h3 style="margin:0">Kontostände</h3>
+        <button onclick="loadStats()" style="background:none; color:#27ae60; padding:0; font-size:12px; width:auto;">🔄 Laden</button>
     </div>
-    
-    <div class="grid" style="margin-top: 15px;">
-        <div class="stat"><b>Gesamt</b><span id="val-gesamt">...</span> €</div>
-        <div class="stat"><b>Konto</b><span id="val-konto">...</span> €</div>
-        <div class="stat"><b>PayPal</b><span id="val-paypal">...</span> €</div>
-        <div class="stat"><b>Wallet</b><span id="val-portemonnaie">...</span> €</div>
+
+    <div class="grid" style="margin-top:10px;">
+        <div class="stat"><b>Gesamt</b><span id="val-gesamt">...</span>€</div>
+        <div class="stat"><b>Konto</b><span id="val-konto">...</span>€</div>
+        <div class="stat"><b>PayPal</b><span id="val-paypal">...</span>€</div>
+        <div class="stat"><b>Wallet</b><span id="val-portemonnaie">...</span>€</div>
     </div>
 
     <hr>
 
-    <label>Konto / Ziel:</label>
+    <label>Konto / Quelle:</label>
     <select id="reiter">
         <option value="Konto">Konto (EC)</option>
         <option value="Paypal">Paypal</option>
         <option value="Kreditkarte">Kreditkarte</option>
         <option value="Portemonnaie">Portemonnaie (Bar)</option>
         <option value="Münzglas">Münzglas</option>
-        <option value="Pfandbon">Pfandbon (Münzglas G-K)</option>
+        <option value="Pfandbon">Pfandbon (G-K)</option>
     </select>
 
-    <label>Datum (optional):</label>
+    <label>Datum:</label>
     <input type="date" id="datum">
 
-    <label>Beschreibung (Zweck):</label>
-    <input type="text" id="zweck" placeholder="z.B. Wocheneinkauf Rewe">
+    <label>Zweck (Beschreibung):</label>
+    <input type="text" id="zweck" placeholder="z.B. Rewe Einkauf">
 
-    <label>Kategorie (#Hashtag):</label>
-    <input list="kat-liste" id="kategorie" placeholder="Kategorie wählen oder tippen...">
+    <label>Hashtag (Kategorie):</label>
+    <input list="kat-liste" id="kategorie" placeholder="Wählen oder Tippen">
     <datalist id="kat-liste">
-        <option value="Essen"><option value="Freizeit"><option value="Hy
+        <option value="Essen"><option value="Freizeit"><option value="Wohnen"><option value="Technik">
+    </datalist>
+
+    <label>Betrag (€):</label>
+    <input type="number" id="betrag" placeholder="0.00" step="0.01" inputmode="decimal">
+
+    <div class="btn-group">
+        <button onclick="senden('aus')" class="btn-aus">Ausgabe (-)</button>
+        <button onclick="senden('ein')" class="btn-ein">Einnahme (+)</button>
+    </div>
+
+    <div class="umbuchung-box">
+        <label>Transfer NACH:</label>
+        <select id="ziel_reiter">
+            <option value="Portemonnaie">Portemonnaie (Bar)</option>
+            <option value="Konto">Konto (EC)</option>
+            <option value="Paypal">Paypal</option>
+        </select>
+        <button onclick="senden('umbuchung')" class="btn-umb">Umbuchung bestätigen ⇄</button>
+    </div>
+
+    <p id="status" class="status"></p>
+</div>
+
+<script>
+    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGDkieud8N_cGO7xeoTvDxwn7_fPTHSD6THuxaeInnfLTdf75arw/exec";
+    
+    let userPin = localStorage.getItem('finanz_pin') || prompt("Sicherheits-PIN:");
+    if (userPin) localStorage.setItem('finanz_pin', userPin);
+
+    window.onload = loadStats;
+
+    async function loadStats() {
+        document.getElementById('status').innerText = "Lade...";
+        try {
+            const r = await fetch(GOOGLE_URL);
+            const s = await r.json();
+            document.getElementById('val-gesamt').innerText = s.gesamt.toFixed(2);
+            document.getElementById('val-konto').innerText = s.konto.toFixed(2);
+            document.getElementById('val-paypal').innerText = s.paypal.toFixed(2);
+            document.getElementById('val-portemonnaie').innerText = s.portemonnaie.toFixed(2);
+            document.getElementById('status').innerText = "";
+        } catch(e) { document.getElementById('status').innerText = "Fehler beim Laden."; }
+    }
+
+    async function senden(typ) {
+        const statusEl = document.getElementById('status');
+        const data = {
+            pin: userPin,
+            reiter: document.getElementById('reiter').value,
+            ziel: document.getElementById('ziel_reiter').value,
+            betrag: parseFloat(document.getElementById('betrag').value.replace(',', '.')),
+            zweck: document.getElementById('zweck').value || "Umbuchung",
+            kategorie: document.getElementById('kategorie').value || "Allgemein",
+            datum: document.getElementById('datum').value || null,
+            mode: typ
+        };
+
+        if (isNaN(data.betrag)) return alert("Betrag fehlt!");
+
+        statusEl.innerText = "Sende...";
+        try {
+            await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+            statusEl.innerText = "✅ Erledigt!";
+            document.getElementById('betrag').value = "";
+            document.getElementById('zweck').value = "";
+            setTimeout(loadStats, 1500);
+        } catch(e) { statusEl.innerText = "Fehler!"; }
+    }
+</script>
+
+</body>
+</html>
