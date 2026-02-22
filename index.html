@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanz-Manager</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f4f7f6; padding: 15px; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 0.9em; }
+        .stat { background: #eef2f3; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #dce4e6; }
+        .stat b { display: block; color: #2c3e50; font-size: 0.8em; text-transform: uppercase; }
+        .stat span { font-size: 1.1em; font-weight: bold; color: #1a73e8; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        button { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+        .btn-ausgabe { background: #e74c3c; }
+        .status { text-align: center; color: #7f8c8d; font-size: 14px; min-height: 20px; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h3>💰 Kontostände</h3>
+    <div class="grid">
+        <div class="stat"><b>Gesamt</b><span id="val-gesamt">-</span> €</div>
+        <div class="stat"><b>Konto</b><span id="val-konto">-</span> €</div>
+        <div class="stat"><b>PayPal</b><span id="val-paypal">-</span> €</div>
+        <div class="stat"><b>Wallet</b><span id="val-portemonnaie">-</span> €</div>
+    </div>
+
+    <hr>
+
+    <label>Buchung für:</label>
+    <select id="reiter">
+        <option value="Konto">Konto</option>
+        <option value="Paypal">Paypal</option>
+        <option value="Kreditkarte">Kreditkarte</option>
+        <option value="Portemonnaie">Portemonnaie</option>
+        <option value="Münzglas">Münzglas</option>
+    </select>
+
+    <input type="number" id="betrag" placeholder="Betrag (€)" step="0.01">
+    <input type="text" id="zweck" placeholder="Zweck (z.B. Miete)">
+    <input type="text" id="kategorie" placeholder="#Kategorie">
+
+    <button onclick="senden('aus')" class="btn-ausgabe">Geld ausgeben</button>
+    <button onclick="senden('ein')">Geld erhalten</button>
+    
+    <p id="status" class="status"></p>
+</div>
+
+<script>
+    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbzS6_-pJVfim8iYXqUUU0RCnfjVZdSpOVkcrgHO7l7szMVcVRRE2ogvoiN3g-ZDuOXI/exec";
+
+    async function senden(typ) {
+        const btn = event.target;
+        const originalText = btn.innerText;
+        const betrag = document.getElementById('betrag').value;
+        const zweck = document.getElementById('zweck').value;
+        const kategorie = document.getElementById('kategorie').value;
+        const reiter = document.getElementById('reiter').value;
+
+        if(!betrag || !zweck) {
+            alert("Betrag und Zweck werden benötigt!");
+            return;
+        }
+
+        const data = {
+            reiter: reiter,
+            betrag: parseFloat(betrag),
+            zweck: zweck,
+            kategorie: kategorie,
+            typ: typ
+        };
+
+        // UI Feedback
+        document.getElementById('status').innerText = "Wird verarbeitet...";
+        btn.disabled = true;
+        btn.innerText = "Sende...";
+
+        try {
+            const resp = await fetch(GOOGLE_URL, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            const stats = await resp.json();
+            
+            // Anzeige aktualisieren mit den Werten aus der Google Tabelle
+            document.getElementById('val-gesamt').innerText = stats.gesamt.toFixed(2);
+            document.getElementById('val-konto').innerText = stats.konto.toFixed(2);
+            document.getElementById('val-paypal').innerText = stats.paypal.toFixed(2);
+            document.getElementById('val-portemonnaie').innerText = stats.portemonnaie.toFixed(2);
+            
+            document.getElementById('status').innerText = "✅ Erfolgreich eingetragen!";
+            document.getElementById('betrag').value = "";
+            document.getElementById('zweck').value = "";
+            document.getElementById('kategorie').value = "";
+        } catch(e) {
+            document.getElementById('status').innerText = "❌ Fehler beim Senden.";
+            console.error(e);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
+    }
+</script>
+
+</body>
+</html>
