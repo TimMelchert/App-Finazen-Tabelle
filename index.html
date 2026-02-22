@@ -52,7 +52,14 @@
 </div>
 
 <script>
-    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbzS6_-pJVfim8iYXqUUU0RCnfjVZdSpOVkcrgHO7l7szMVcVRRE2ogvoiN3g-ZDuOXI/exec";
+    const GOOGLE_URL = "DEINE_WEB_APP_URL_HIER";
+
+    // Prüfen, ob PIN schon auf dem Handy gespeichert ist
+    let userPin = localStorage.getItem('finanz_pin');
+    if (!userPin) {
+        userPin = prompt("Bitte lege deine PIN für diese App fest:");
+        localStorage.setItem('finanz_pin', userPin);
+    }
 
     async function senden(typ) {
         const btn = event.target;
@@ -68,6 +75,7 @@
         }
 
         const data = {
+            pin: userPin, // Hier wird die PIN mitgeschickt
             reiter: reiter,
             betrag: parseFloat(betrag),
             zweck: zweck,
@@ -75,34 +83,40 @@
             typ: typ
         };
 
-        // UI Feedback
         document.getElementById('status').innerText = "Wird verarbeitet...";
         btn.disabled = true;
-        btn.innerText = "Sende...";
 
         try {
             const resp = await fetch(GOOGLE_URL, {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
-            const stats = await resp.json();
             
-            // Anzeige aktualisieren mit den Werten aus der Google Tabelle
+            const textResult = await resp.text();
+            
+            // Falls Google "Zugriff verweigert" sagt:
+            if (textResult === "Zugriff verweigert") {
+                alert("Falsche PIN! Setze die PIN zurück.");
+                localStorage.removeItem('finanz_pin');
+                location.reload();
+                return;
+            }
+
+            // Falls erfolgreich, verarbeite die JSON-Summen
+            const stats = JSON.parse(textResult);
+            
             document.getElementById('val-gesamt').innerText = stats.gesamt.toFixed(2);
             document.getElementById('val-konto').innerText = stats.konto.toFixed(2);
             document.getElementById('val-paypal').innerText = stats.paypal.toFixed(2);
             document.getElementById('val-portemonnaie').innerText = stats.portemonnaie.toFixed(2);
             
-            document.getElementById('status').innerText = "✅ Erfolgreich eingetragen!";
+            document.getElementById('status').innerText = "✅ Erfolgreich!";
             document.getElementById('betrag').value = "";
             document.getElementById('zweck').value = "";
-            document.getElementById('kategorie').value = "";
         } catch(e) {
             document.getElementById('status').innerText = "❌ Fehler beim Senden.";
-            console.error(e);
         } finally {
             btn.disabled = false;
-            btn.innerText = originalText;
         }
     }
 </script>
