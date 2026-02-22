@@ -6,27 +6,42 @@
     <title>Finanz-Manager Pro</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f7f6; padding: 15px; margin: 0; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 0.9em; }
-        .stat { background: #eef2f3; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #dce4e6; }
-        .stat b { display: block; color: #2c3e50; font-size: 0.75em; text-transform: uppercase; }
-        .stat span { font-size: 1.1em; font-weight: bold; color: #1a73e8; }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        button { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.98); }
-        .btn-ausgabe { background: #e74c3c; }
-        .btn-umbuchung { background: #34495e; margin-top: 20px; }
-        .status { text-align: center; color: #7f8c8d; font-size: 14px; min-height: 24px; margin-top: 10px; }
-        label { font-size: 0.85em; color: #7f8c8d; margin-left: 5px; display: block; margin-top: 10px; font-weight: bold; }
-        .umbuchung-box { background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px dashed #ccc; margin-top: 15px; }
+        :root { --primary: #27ae60; --danger: #e74c3c; --dark: #34495e; --bg: #f4f7f6; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: #2c3e50; }
+        .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); max-width: 450px; margin: auto; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .stat { background: #f8fafb; padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #edf2f4; }
+        .stat b { display: block; color: #7f8c8d; font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat span { font-size: 1.15em; font-weight: bold; color: var(--primary); }
+        
+        label { font-size: 0.85em; color: #7f8c8d; margin: 12px 0 4px 5px; display: block; font-weight: 600; }
+        input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #dce4e6; box-sizing: border-box; font-size: 16px; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1); }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        button { width: 100%; padding: 14px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        button:active { transform: scale(0.96); opacity: 0.9; }
+        
+        .btn-ein { background: var(--primary); }
+        .btn-aus { background: var(--danger); }
+        
+        .umbuchung-box { background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e0; margin-top: 25px; }
+        .btn-umbuchung { background: var(--dark); margin-top: 10px; width: 100%; }
+        
+        .status { text-align: center; color: #94a3b8; font-size: 13px; margin-top: 15px; min-height: 18px; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h3>💰 Kontostände <button onclick="loadStats()" style="width: auto; padding: 5px 10px; font-size: 12px; float: right; background: #95a5a6;">🔄</button></h3>
-    <div class="grid">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; font-size: 1.4em;">Kontostände</h2>
+        <button onclick="loadStats()" style="width: auto; padding: 6px 12px; background: #eee; color: #666; font-size: 12px;">🔄 Laden</button>
+    </div>
+    
+    <div class="grid" style="margin-top: 15px;">
         <div class="stat"><b>Gesamt</b><span id="val-gesamt">...</span> €</div>
         <div class="stat"><b>Konto</b><span id="val-konto">...</span> €</div>
         <div class="stat"><b>PayPal</b><span id="val-paypal">...</span> €</div>
@@ -35,7 +50,7 @@
 
     <hr>
 
-    <label>Ziel:</label>
+    <label>Konto / Ziel:</label>
     <select id="reiter">
         <option value="Konto">Konto (EC)</option>
         <option value="Paypal">Paypal</option>
@@ -45,134 +60,13 @@
         <option value="Pfandbon">Pfandbon (Münzglas G-K)</option>
     </select>
 
-    <label>Datum:</label>
+    <label>Datum (optional):</label>
     <input type="date" id="datum">
 
     <label>Beschreibung (Zweck):</label>
-    <input type="text" id="zweck" placeholder="Wofür genau?">
+    <input type="text" id="zweck" placeholder="z.B. Wocheneinkauf Rewe">
 
     <label>Kategorie (#Hashtag):</label>
-    <input list="kat-liste" id="kategorie" placeholder="Kategorie wählen oder neu...">
+    <input list="kat-liste" id="kategorie" placeholder="Kategorie wählen oder tippen...">
     <datalist id="kat-liste">
-        <option value="Essen"><option value="Freizeit"><option value="Hygiene"><option value="Spenden">
-        <option value="Style"><option value="Technik"><option value="Wohnen"><option value="Abos">
-        <option value="Fortbewegung"><option value="Geschenke"><option value="Aktivismus"><option value="Urlaub"><option value="Studium">
-    </datalist>
-
-    <input type="number" id="betrag" placeholder="Betrag (€)" step="0.01" inputmode="decimal">
-    
-    <button onclick="senden('aus')" class="btn-ausgabe">Geld ausgeben (-)</button>
-    <button onclick="senden('ein')">Geld erhalten (+)</button>
-
-    <div class="umbuchung-box">
-        <label>Umbuchung: Von oben NACH:</label>
-        <select id="ziel_reiter">
-            <option value="Portemonnaie">Portemonnaie (Bar)</option>
-            <option value="Konto">Konto (EC)</option>
-            <option value="Paypal">Paypal</option>
-            <option value="Münzglas">Münzglas</option>
-        </select>
-        <button onclick="senden('umbuchung')" class="btn-umbuchung">Transfer durchführen ⇄</button>
-    </div>
-    
-    <p id="status" class="status"></p>
-</div>
-
-<script>
-    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGDkieud8N_cGO7xeoTvDxwn7_fPTHSD6THuxaeInnfLTdf75arw/exec"; 
-
-    let userPin = localStorage.getItem('finanz_pin') || prompt("PIN festlegen:");
-    if (userPin) localStorage.setItem('finanz_pin', userPin);
-
-    window.onload = () => {
-        if (navigator.onLine) {
-            processQueue();
-            loadStats();
-        }
-    };
-
-    async function loadStats() {
-        document.getElementById('status').innerText = "Lade Kontostände...";
-        try {
-            const resp = await fetch(GOOGLE_URL);
-            const stats = await resp.json();
-            updateUI(stats);
-            document.getElementById('status').innerText = "";
-        } catch (e) {
-            document.getElementById('status').innerText = "Fehler beim Laden.";
-        }
-    }
-
-    async function senden(typ) {
-        const statusEl = document.getElementById('status');
-        const betragVal = document.getElementById('betrag').value.replace(',', '.');
-        
-        const data = {
-            pin: userPin,
-            reiter: document.getElementById('reiter').value,
-            ziel: document.getElementById('ziel_reiter').value,
-            betrag: parseFloat(betragVal),
-            zweck: document.getElementById('zweck').value || (typ === 'umbuchung' ? 'Umbuchung' : ''),
-            kategorie: document.getElementById('kategorie').value,
-            datum: document.getElementById('datum').value || null,
-            mode: typ 
-        };
-
-        if (isNaN(data.betrag)) return alert("Bitte Betrag eingeben!");
-        if (typ !== 'umbuchung' && !data.zweck) return alert("Beschreibung fehlt!");
-
-        if (!navigator.onLine) {
-            saveToQueue(data);
-            statusEl.innerText = "⏳ Offline gespeichert!";
-            resetFields();
-            return;
-        }
-
-        statusEl.innerText = "Sende...";
-        try {
-            const resp = await fetch(GOOGLE_URL, { method: 'POST', body: JSON.stringify(data) });
-            const result = await resp.json();
-            updateUI(result);
-            statusEl.innerText = "✅ Erfolgreich!";
-            resetFields();
-        } catch (e) {
-            saveToQueue(data);
-            statusEl.innerText = "⚠️ Fehler, Warteschlange!";
-        }
-    }
-
-    function saveToQueue(data) {
-        let queue = JSON.parse(localStorage.getItem('finanz_queue') || '[]');
-        queue.push(data);
-        localStorage.setItem('finanz_queue', JSON.stringify(queue));
-    }
-
-    async function processQueue() {
-        let queue = JSON.parse(localStorage.getItem('finanz_queue') || '[]');
-        if (queue.length === 0) return;
-        for (let item of queue) {
-            await fetch(GOOGLE_URL, { method: 'POST', body: JSON.stringify(item) });
-        }
-        localStorage.setItem('finanz_queue', '[]');
-        loadStats();
-    }
-
-    function updateUI(s) {
-        document.getElementById('val-gesamt').innerText = s.gesamt.toFixed(2);
-        document.getElementById('val-konto').innerText = s.konto.toFixed(2);
-        document.getElementById('val-paypal').innerText = s.paypal.toFixed(2);
-        document.getElementById('val-portemonnaie').innerText = s.portemonnaie.toFixed(2);
-    }
-
-    function resetFields() {
-        document.getElementById('betrag').value = "";
-        document.getElementById('zweck').value = "";
-        document.getElementById('kategorie').value = "";
-        document.getElementById('datum').value = "";
-    }
-
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
-</script>
-
-</body>
-</html>
+        <option value="Essen"><option value="Freizeit"><option value="Hy
