@@ -59,71 +59,80 @@
 
 <script>
     const GOOGLE_URL = "DEINE_WEB_APP_URL_HIER";
+    let userPin = localStorage.getItem('finanz_pin') || prompt("Bitte PIN festlegen:");
+    if (!localStorage.getItem('finanz_pin')) localStorage.setItem('finanz_pin', userPin);
 
-    // Prüfen, ob PIN schon auf dem Handy gespeichert ist
-    let userPin = localStorage.getItem('finanz_pin');
-    if (!userPin) {
-        userPin = prompt("Bitte lege deine PIN für diese App fest:");
-        localStorage.setItem('finanz_pin', userPin);
-    }
+    // Initialisierung: Versuche Warteschlange beim Start zu leeren
+    window.addEventListener('online', processQueue);
+    window.onload = processQueue;
 
     async function senden(typ) {
-        const btn = event.target;
-        const originalText = btn.innerText;
-        const betrag = document.getElementById('betrag').value;
-        const zweck = document.getElementById('zweck').value;
-        const kategorie = document.getElementById('kategorie').value;
-        const reiter = document.getElementById('reiter').value;
+        const data = {
+            pin: userPin,
+            reiter: document.getElementById('reiter').value,
+            betrag: parseFloat(document.getElementById('betrag').value),
+            zweck: document.getElementById('zweck').value,
+            kategorie: document.getElementById('kategorie').value,
+            typ: typ,
+            timestamp: new Date().toISOString()
+        };
 
-        if(!betrag || !zweck) {
-            alert("Betrag und Zweck werden benötigt!");
+        if(!data.betrag || !data.zweck) return alert("Daten unvollständig!");
+
+        if (!navigator.onLine) {
+            saveToQueue(data);
+            alert("Offline! Buchung wurde für später gespeichert.");
             return;
         }
 
-        const data = {
-            pin: userPin, // Hier wird die PIN mitgeschickt
-            reiter: reiter,
-            betrag: parseFloat(betrag),
-            zweck: zweck,
-            kategorie: kategorie,
-            typ: typ
-        };
+        performSend(data);
+    }
 
-        document.getElementById('status').innerText = "Wird verarbeitet...";
-        btn.disabled = true;
-
+    async function performSend(data) {
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = "Sende...";
+        
         try {
-            const resp = await fetch(GOOGLE_URL, {
-                method: 'POST',
-                body: JSON.stringify(data)
-            });
+            const resp = await fetch(GOOGLE_URL, { method: 'POST', body: JSON.stringify(data) });
+            const result = await resp.json();
             
-            const textResult = await resp.text();
+            // Kontostände aktualisieren
+            document.getElementById('val-gesamt').innerText = result.gesamt.toFixed(2);
+            document.getElementById('val-konto').innerText = result.konto.toFixed(2);
             
-            // Falls Google "Zugriff verweigert" sagt:
-            if (textResult === "Zugriff verweigert") {
-                alert("Falsche PIN! Setze die PIN zurück.");
-                localStorage.removeItem('finanz_pin');
-                location.reload();
-                return;
-            }
-
-            // Falls erfolgreich, verarbeite die JSON-Summen
-            const stats = JSON.parse(textResult);
-            
-            document.getElementById('val-gesamt').innerText = stats.gesamt.toFixed(2);
-            document.getElementById('val-konto').innerText = stats.konto.toFixed(2);
-            document.getElementById('val-paypal').innerText = stats.paypal.toFixed(2);
-            document.getElementById('val-portemonnaie').innerText = stats.portemonnaie.toFixed(2);
-            
-            document.getElementById('status').innerText = "✅ Erfolgreich!";
+            statusEl.innerText = "✅ Erfolgreich!";
             document.getElementById('betrag').value = "";
             document.getElementById('zweck').value = "";
         } catch(e) {
-            document.getElementById('status').innerText = "❌ Fehler beim Senden.";
-        } finally {
-            btn.disabled = false;
+            saveToQueue(data);
+            statusEl.innerText = "⚠️ Fehler: In Warteschlange verschoben.";
         }
+    }
+
+    function saveToQueue(data) {
+        let queue = JSON.parse(localStorage.getItem('finanz_queue') || '[]');
+        queue.push(data);
+        localStorage.setItem('finanz_queue', JSON.stringify(queue));
+        updateQueueUI();
+    }
+
+    async function processQueue() {
+        if (!navigator.onLine) return;
+        let queue = JSON.parse(localStorage.getItem('finanz_queue') || '[]');
+        if (queue.length === 0) return;
+
+        console.log("Verarbeite Warteschlange...");
+        for (let i = 0; i < queue.length; i++) {
+            await fetch(GOOGLE_URL, { method: 'POST', body: JSON.stringify(queue[i]) });
+        }
+        localStorage.setItem('finanz_queue', '[]');
+        updateQueueUI();
+        alert("Warteschlange erfolgreich synchronisiert!");
+    }
+
+    function updateQueueUI() {
+        let queue = JSON.parse(localStorage.getItem('finanz_queue') || '[]');
+        document.getElementById('status').innerText = queue.length > 0 ? `⏳ ${queue.length} Buchung(en) warten...` : "";
     }
 </script>
 
