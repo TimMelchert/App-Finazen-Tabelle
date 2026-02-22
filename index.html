@@ -35,7 +35,7 @@
 
     <hr>
 
-    <label>Quelle / Tabellenblatt:</label>
+    <label>Ziel:</label>
     <select id="reiter">
         <option value="Konto">Konto (EC)</option>
         <option value="Paypal">Paypal</option>
@@ -48,9 +48,12 @@
     <label>Datum:</label>
     <input type="date" id="datum">
 
-    <label>Zweck:</label>
-    <input list="zweck-liste" id="zweck" placeholder="Wählen oder neu eingeben...">
-    <datalist id="zweck-liste">
+    <label>Beschreibung (Zweck):</label>
+    <input type="text" id="zweck" placeholder="Wofür genau?">
+
+    <label>Kategorie (#Hashtag):</label>
+    <input list="kat-liste" id="kategorie" placeholder="Kategorie wählen oder neu...">
+    <datalist id="kat-liste">
         <option value="Essen"><option value="Freizeit"><option value="Hygiene"><option value="Spenden">
         <option value="Style"><option value="Technik"><option value="Wohnen"><option value="Abos">
         <option value="Fortbewegung"><option value="Geschenke"><option value="Aktivismus"><option value="Urlaub"><option value="Studium">
@@ -81,7 +84,6 @@
     let userPin = localStorage.getItem('finanz_pin') || prompt("PIN festlegen:");
     if (userPin) localStorage.setItem('finanz_pin', userPin);
 
-    // Beim Start: Offline-Queue prüfen und Kontostände laden
     window.onload = () => {
         if (navigator.onLine) {
             processQueue();
@@ -97,28 +99,32 @@
             updateUI(stats);
             document.getElementById('status').innerText = "";
         } catch (e) {
-            document.getElementById('status').innerText = "Kontostände konnten nicht geladen werden.";
+            document.getElementById('status').innerText = "Fehler beim Laden.";
         }
     }
 
     async function senden(typ) {
         const statusEl = document.getElementById('status');
+        const betragVal = document.getElementById('betrag').value.replace(',', '.');
+        
         const data = {
             pin: userPin,
             reiter: document.getElementById('reiter').value,
             ziel: document.getElementById('ziel_reiter').value,
-            betrag: parseFloat(document.getElementById('betrag').value.replace(',', '.')),
+            betrag: parseFloat(betragVal),
             zweck: document.getElementById('zweck').value || (typ === 'umbuchung' ? 'Umbuchung' : ''),
+            kategorie: document.getElementById('kategorie').value,
             datum: document.getElementById('datum').value || null,
-            mode: typ // 'aus', 'ein' oder 'umbuchung'
+            mode: typ 
         };
 
         if (isNaN(data.betrag)) return alert("Bitte Betrag eingeben!");
-        if (typ !== 'umbuchung' && !data.zweck) return alert("Zweck fehlt!");
+        if (typ !== 'umbuchung' && !data.zweck) return alert("Beschreibung fehlt!");
 
         if (!navigator.onLine) {
             saveToQueue(data);
             statusEl.innerText = "⏳ Offline gespeichert!";
+            resetFields();
             return;
         }
 
@@ -131,7 +137,7 @@
             resetFields();
         } catch (e) {
             saveToQueue(data);
-            statusEl.innerText = "⚠️ Fehler, in Warteschlange!";
+            statusEl.innerText = "⚠️ Fehler, Warteschlange!";
         }
     }
 
@@ -161,6 +167,8 @@
     function resetFields() {
         document.getElementById('betrag').value = "";
         document.getElementById('zweck').value = "";
+        document.getElementById('kategorie').value = "";
+        document.getElementById('datum').value = "";
     }
 
     if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
