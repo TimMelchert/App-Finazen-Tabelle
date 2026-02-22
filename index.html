@@ -17,7 +17,7 @@
         button:active { transform: scale(0.98); }
         .btn-ausgabe { background: #e74c3c; }
         .status { text-align: center; color: #7f8c8d; font-size: 14px; min-height: 24px; margin-top: 10px; }
-        label { font-size: 0.85em; color: #7f8c8d; margin-left: 5px; }
+        label { font-size: 0.85em; color: #7f8c8d; margin-left: 5px; display: block; margin-top: 10px; }
         hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
     </style>
 </head>
@@ -34,16 +34,157 @@
 
     <hr>
 
-    <label for="reiter">Ziel-Tabellenblatt:</label>
+    <label>Ziel-Tabellenblatt:</label>
     <select id="reiter">
         <option value="Konto">Konto</option>
         <option value="Paypal">Paypal</option>
         <option value="Kreditkarte">Kreditkarte</option>
         <option value="Portemonnaie">Portemonnaie</option>
         <option value="Münzglas">Münzglas</option>
+        <option value="Pfandbon">Pfandbon (Münzglas G-K)</option>
     </select>
 
-    <label for="datum">Datum (leer lassen für heute):</label>
+    <label>Datum (leer lassen für heute):</label>
     <input type="date" id="datum">
 
+    <label>Zweck / Kategorie:</label>
+    <input list="zweck-liste" id="zweck" placeholder="Wählen oder neu eingeben...">
+    <datalist id="zweck-liste">
+        <option value="Essen">
+        <option value="Freizeit">
+        <option value="Hygiene">
+        <option value="Spenden">
+        <option value="Style">
+        <option value="Technik">
+        <option value="Wohnen">
+        <option value="Abos">
+        <option value="Fortbewegung">
+        <option value="Geschenke">
+        <option value="Aktivismus">
+        <option value="Urlaub">
+        <option value="Studium">
+    </datalist>
+
     <input type="number" id="betrag" placeholder="Betrag (€)" step="0.01" inputmode="decimal">
+    <input type="text" id="kategorie_extra" placeholder="#Zusatz-Tag (optional)">
+
+    <button onclick="senden('aus')" class="btn-ausgabe">Geld ausgeben (-)</button>
+    <button onclick="senden('ein')">Geld erhalten (+)</button>
+    
+    <p id="status" class="status"></p>
+</div>
+
+<script>
+    // 1. KONFIGURATION (Setze hier deine URL ein)
+    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGDkieud8N_cGO7xeoTvDxwn7_fPTHSD6THuxaeInnfLTdf75arw/exec"; 
+
+    // 2. PIN-HANDLING
+    let userPin = localStorage.getItem('finanz_pin');
+    if (!userPin) {
+        userPin = prompt("Bitte lege deine PIN für diese App fest:");
+        if (userPin) localStorage.setItem('finanz_pin', userPin);
+    }
+
+    // 3. AUTO-SYNC
+    window.addEventListener('online', processQueue);
+    window.onload = () => { if (navigator.onLine) processQueue(); };
+
+    // 4. SENDEN FUNKTION
+    async function senden(typ) {
+        const statusEl = document.getElementById('status');
+        const betragRaw = document.getElementById('betrag').value.replace(',', '.');
+        
+        const data = {
+            pin: userPin,
+            reiter: document.getElementById('reiter').value,
+            betrag: parseFloat(betragRaw),
+            zweck: document.getElementById('zweck').value,
+            kategorie: document.getElementById('kategorie_extra').value,
+            datum: document.getElementById('datum').value || null,
+            typ: typ
+        };
+
+        if (isNaN(data.betrag) || !data.zweck) {
+            alert("Bitte Betrag und Zweck eingeben!");
+            return;
+        }
+
+        if (!navigator.onLine) {
+            saveToQueue(data);
+            statusEl.innerText = "⏳ Offline! In Warteschlange gespeichert.";
+            resetFields();
+            return;
+        }
+
+        await performSend(data);
+    }
+
+    async function performSend(data) {
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = "Sende...";
+
+        try {
+            const resp = await fetch(GOOGLE_URL, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            const textResult = await resp.text();
+
+            if (textResult === "Zugriff verweigert") {
+                alert("Falsche PIN!");
+                localStorage.removeItem('finanz_pin');
+                location.reload();
+                return;
+            }
+
+            const stats = JSON.parse(textResult);
+            updateUI(stats);
+            statusEl.innerText = "✅ Gespeichert!";
+            resetFields();
+
+        } catch (e) {
+            saveToQueue(data);
+            statusEl.innerText = "⚠️ Fehler! In Warteschlange verschoben.";
+        }
+    }
+
+    function saveToQueue(data) {
+        let queue = JSON.parse(localStorage.getItem('finanz_queue') || '[]');
+        queue.push(data);
+        localStorage.setItem('finanz_queue', JSON.stringify(queue));
+    }
+
+    async function processQueue() {
+        let queue = JSON.parse(localStorage.getItem('finanz_queue') || '[]');
+        if (queue.length === 0) return;
+        document.getElementById('status').innerText = `🔄 Sync ${queue.length} Buchung(en)...`;
+        for (let i = 0; i < queue.length; i++) {
+            try {
+                await fetch(GOOGLE_URL, { method: 'POST', body: JSON.stringify(queue[i]) });
+            } catch (e) { return; }
+        }
+        localStorage.setItem('finanz_queue', '[]');
+        setTimeout(() => location.reload(), 2000);
+    }
+
+    function updateUI(stats) {
+        if (stats.gesamt) document.getElementById('val-gesamt').innerText = stats.gesamt.toFixed(2);
+        if (stats.konto) document.getElementById('val-konto').innerText = stats.konto.toFixed(2);
+        if (stats.paypal) document.getElementById('val-paypal').innerText = stats.paypal.toFixed(2);
+        if (stats.portemonnaie) document.getElementById('val-portemonnaie').innerText = stats.portemonnaie.toFixed(2);
+    }
+
+    function resetFields() {
+        document.getElementById('betrag').value = "";
+        document.getElementById('zweck').value = "";
+        document.getElementById('kategorie_extra').value = "";
+        document.getElementById('datum').value = "";
+    }
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+</script>
+
+</body>
+</html>
