@@ -5,23 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finanz-Manager</title>
     <link rel="manifest" href="manifest.json">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
     <style>
         body { font-family: -apple-system, sans-serif; background: #f4f7f6; padding: 15px; margin: 0; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 0.9em; }
         .stat { background: #eef2f3; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #dce4e6; }
-        .stat b { display: block; color: #2c3e50; font-size: 0.8em; text-transform: uppercase; }
+        .stat b { display: block; color: #2c3e50; font-size: 0.75em; text-transform: uppercase; }
         .stat span { font-size: 1.1em; font-weight: bold; color: #1a73e8; }
         input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
         button { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:active { transform: scale(0.98); }
         .btn-ausgabe { background: #e74c3c; }
-        .status { text-align: center; color: #7f8c8d; font-size: 14px; min-height: 20px; }
+        .status { text-align: center; color: #7f8c8d; font-size: 14px; min-height: 24px; margin-top: 10px; }
+        label { font-size: 0.85em; color: #7f8c8d; margin-left: 5px; }
         hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
     </style>
 </head>
@@ -38,7 +34,7 @@
 
     <hr>
 
-    <label>Buchung für:</label>
+    <label for="reiter">Ziel-Tabellenblatt:</label>
     <select id="reiter">
         <option value="Konto">Konto</option>
         <option value="Paypal">Paypal</option>
@@ -47,94 +43,7 @@
         <option value="Münzglas">Münzglas</option>
     </select>
 
-    <input type="number" id="betrag" placeholder="Betrag (€)" step="0.01">
-    <input type="text" id="zweck" placeholder="Zweck (z.B. Miete)">
-    <input type="text" id="kategorie" placeholder="#Kategorie">
+    <label for="datum">Datum (leer lassen für heute):</label>
+    <input type="date" id="datum">
 
-    <button onclick="senden('aus')" class="btn-ausgabe">Geld ausgeben</button>
-    <button onclick="senden('ein')">Geld erhalten</button>
-    
-    <p id="status" class="status"></p>
-</div>
-
-<script>
-    const GOOGLE_URL = "DEINE_WEB_APP_URL_HIER";
-    let userPin = localStorage.getItem('finanz_pin') || prompt("Bitte PIN festlegen:");
-    if (!localStorage.getItem('finanz_pin')) localStorage.setItem('finanz_pin', userPin);
-
-    // Initialisierung: Versuche Warteschlange beim Start zu leeren
-    window.addEventListener('online', processQueue);
-    window.onload = processQueue;
-
-    async function senden(typ) {
-        const data = {
-            pin: userPin,
-            reiter: document.getElementById('reiter').value,
-            betrag: parseFloat(document.getElementById('betrag').value),
-            zweck: document.getElementById('zweck').value,
-            kategorie: document.getElementById('kategorie').value,
-            typ: typ,
-            timestamp: new Date().toISOString()
-        };
-
-        if(!data.betrag || !data.zweck) return alert("Daten unvollständig!");
-
-        if (!navigator.onLine) {
-            saveToQueue(data);
-            alert("Offline! Buchung wurde für später gespeichert.");
-            return;
-        }
-
-        performSend(data);
-    }
-
-    async function performSend(data) {
-        const statusEl = document.getElementById('status');
-        statusEl.innerText = "Sende...";
-        
-        try {
-            const resp = await fetch(GOOGLE_URL, { method: 'POST', body: JSON.stringify(data) });
-            const result = await resp.json();
-            
-            // Kontostände aktualisieren
-            document.getElementById('val-gesamt').innerText = result.gesamt.toFixed(2);
-            document.getElementById('val-konto').innerText = result.konto.toFixed(2);
-            
-            statusEl.innerText = "✅ Erfolgreich!";
-            document.getElementById('betrag').value = "";
-            document.getElementById('zweck').value = "";
-        } catch(e) {
-            saveToQueue(data);
-            statusEl.innerText = "⚠️ Fehler: In Warteschlange verschoben.";
-        }
-    }
-
-    function saveToQueue(data) {
-        let queue = JSON.parse(localStorage.getItem('finanz_queue') || '[]');
-        queue.push(data);
-        localStorage.setItem('finanz_queue', JSON.stringify(queue));
-        updateQueueUI();
-    }
-
-    async function processQueue() {
-        if (!navigator.onLine) return;
-        let queue = JSON.parse(localStorage.getItem('finanz_queue') || '[]');
-        if (queue.length === 0) return;
-
-        console.log("Verarbeite Warteschlange...");
-        for (let i = 0; i < queue.length; i++) {
-            await fetch(GOOGLE_URL, { method: 'POST', body: JSON.stringify(queue[i]) });
-        }
-        localStorage.setItem('finanz_queue', '[]');
-        updateQueueUI();
-        alert("Warteschlange erfolgreich synchronisiert!");
-    }
-
-    function updateQueueUI() {
-        let queue = JSON.parse(localStorage.getItem('finanz_queue') || '[]');
-        document.getElementById('status').innerText = queue.length > 0 ? `⏳ ${queue.length} Buchung(en) warten...` : "";
-    }
-</script>
-
-</body>
-</html>
+    <input type="number" id="betrag" placeholder="Betrag (€)" step="0.01" inputmode="decimal">
