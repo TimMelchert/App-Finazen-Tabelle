@@ -74,14 +74,17 @@
     </div>
 
     <div class="umbuchung-box">
-        <label>Transfer NACH:</label>
-        <select id="ziel_reiter">
-            <option value="Portemonnaie">Portemonnaie (Bar)</option>
-            <option value="Konto">Konto (EC)</option>
-            <option value="Paypal">Paypal</option>
-        </select>
-        <button onclick="senden('umbuchung')" class="btn-umb">Umbuchung bestätigen ⇄</button>
-    </div>
+    <label>Transfer NACH:</label>
+    <select id="ziel_reiter">
+        <option value="Portemonnaie">Portemonnaie (Bar)</option>
+        <option value="Konto">Konto (EC)</option>
+        <option value="Paypal">Paypal</option>
+        <option value="Kreditkarte">Kreditkarte</option>
+        <option value="Münzglas">Münzglas</option>
+        <option value="Pfandbon">Pfandbon (G-K)</option>
+    </select>
+    <button onclick="senden('umbuchung')" class="btn-umb">Umbuchung bestätigen ⇄</button>
+</div>
 
     <p id="status" class="status"></p>
 </div>
