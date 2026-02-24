@@ -32,6 +32,11 @@
 </head>
 <body>
 
+<div id="success-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
+    <span style="font-size: 100px;">✅</span>
+    <h2 style="color:#27ae60; font-family:sans-serif;">Gesendet!</h2>
+</div>
+    
 <div class="card">
     <div class="gesamt-container">
         <span class="gesamt-label">Gesamtvermögen</span>
@@ -133,15 +138,17 @@
         } catch(e) { console.log("Fehler beim Laden"); }
     }
 
-    async function senden(typ) {
+   async function senden(typ) {
         const statusEl = document.getElementById('status');
+        const overlay = document.getElementById('success-overlay');
+        
         const data = {
             pin: userPin,
             reiter: document.getElementById('reiter').value,
             ziel: document.getElementById('ziel_reiter').value,
             betrag: parseFloat(document.getElementById('betrag').value.replace(',', '.')),
             zweck: document.getElementById('zweck').value || "Transfer",
-            kategorie: document.getElementById('kategorie').value || "Allgemein", // <-- Hier geändert
+            kategorie: document.getElementById('kategorie').value || "Allgemein",
             datum: document.getElementById('datum').value,
             mode: typ
         };
@@ -149,12 +156,30 @@
         if (isNaN(data.betrag)) return alert("Betrag eingeben!");
 
         statusEl.innerText = "Sende...";
+        
         try {
+            // POST an Google
             await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-            statusEl.innerText = "✅ Erledigt!";
+            
+            // 1. Großes Overlay anzeigen
+            overlay.style.display = 'flex';
+            
+            // 2. Felder zurücksetzen
             document.getElementById('betrag').value = "";
-            setTimeout(() => { statusEl.innerText = ""; loadStats(); }, 2000);
-        } catch(e) { statusEl.innerText = "❌ Fehler!"; }
+            document.getElementById('zweck').value = "";
+            document.getElementById('kategorie').value = "";
+            statusEl.innerText = "";
+
+            // 3. Nach 1,5 Sekunden: Overlay weg und Stats neu laden
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                loadStats();
+            }, 1500);
+
+        } catch(e) { 
+            statusEl.innerText = "❌ Fehler!";
+            console.error(e);
+        }
     }
 </script>
 
