@@ -61,8 +61,26 @@
     <label>Datum:</label>
     <input type="date" id="datum">
 
-    <label>Zweck / Kategorie:</label>
+    <label>Zweck (Beschreibung):</label>
     <input type="text" id="zweck" placeholder="z.B. Rewe Einkauf">
+
+    <label>Hashtag (Kategorie):</label>
+    <input list="kat-liste" id="kategorie" placeholder="Wählen oder Tippen">
+    <datalist id="kat-liste">
+        <option value="Abos">
+        <option value="Aktivismus">
+        <option value="Essen">
+        <option value="Fortbewegung">
+        <option value="Freizeit">
+        <option value="Geschenke">
+        <option value="Hygiene">
+        <option value="Spenden">
+        <option value="Studium">
+        <option value="Style">
+        <option value="Technik">
+        <option value="Urlaub">
+        <option value="Wohnen">
+    </datalist>
 
     <label>Betrag (€):</label>
     <input type="number" id="betrag" placeholder="0.00" step="0.01" inputmode="decimal">
@@ -123,7 +141,7 @@
             ziel: document.getElementById('ziel_reiter').value,
             betrag: parseFloat(document.getElementById('betrag').value.replace(',', '.')),
             zweck: document.getElementById('zweck').value || "Transfer",
-            kategorie: "Allgemein",
+            kategorie: document.getElementById('kategorie').value || "Allgemein", // <-- Hier geändert
             datum: document.getElementById('datum').value,
             mode: typ
         };
