@@ -4,124 +4,191 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finanz-Manager</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 15px; margin: 0; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
-        
-        .gesamt-container { text-align: center; padding: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; }
-        .gesamt-label { font-size: 0.9em; color: #666; font-weight: bold; text-transform: uppercase; }
-        .gesamt-wert { font-size: 2.2em; font-weight: bold; color: #27ae60; display: block; margin-top: 5px; }
+        :root {
+            --primary: #34495e;
+            --success: #27ae60;
+            --warning: #f1c40f;
+            --danger: #e74c3c;
+            --bg: #f4f7f6;
+        }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .stat { background: #f9f9f9; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
-        .stat b { display: block; font-size: 0.75em; color: #666; margin-bottom: 3px; }
-        .stat span { font-weight: bold; color: #333; font-size: 1.1em; }
+        body { font-family: sans-serif; background: var(--bg); padding: 15px; margin: 0; padding-right: 75px; }
         
-        label { display: block; margin: 10px 0 3px 0; font-size: 0.8em; font-weight: bold; color: #555; }
-        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; margin-bottom: 5px; }
+        /* SCHWREBENDE NAVIGATION RECHTS */
+        .side-nav {
+            position: fixed;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%; /* Rund für modernen Look */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #7f8c8d;
+        }
+
+        .nav-btn.active { 
+            background: var(--primary); 
+            color: white; 
+            transform: scale(1.1);
+        }
+
+        /* CARDS & CONTENT */
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); max-width: 450px; margin: auto; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .gesamt-container { text-align: center; padding: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; }
+        .gesamt-wert { font-size: 2em; font-weight: bold; display: block; }
+
+        /* BUDGET BALKEN LOGIK */
+        .budget-box { margin: 20px 0; background: #fff; padding: 10px; border-radius: 10px; }
+        .bar-bg { width: 100%; height: 18px; background: #eee; border-radius: 9px; overflow: hidden; margin-top: 8px; }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.8s, background-color 0.5s; }
+        .bar-text { display: flex; justify-content: space-between; font-size: 0.85em; font-weight: bold; }
+
+        /* NETTO GRID */
+        .netto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .netto-stat { background: #fdfdfd; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #f0f0f0; }
+        .netto-stat b { display: block; font-size: 0.65em; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+        .netto-stat span { font-weight: bold; font-size: 1.1em; color: #333; }
+
+        /* FORMULAR ELEMENTE */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat { background: #fafafa; padding: 8px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
+        label { display: block; margin: 12px 0 4px 0; font-size: 0.75em; font-weight: bold; color: #7f8c8d; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
         
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        button { padding: 15px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .btn-ein { background: #27ae60; }
-        .btn-aus { background: #e74c3c; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        button { padding: 16px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .btn-ein { background: var(--success); }
+        .btn-aus { background: var(--danger); }
         
-        .umbuchung-box { background: #f0f0f0; padding: 15px; border-radius: 10px; border: 1px dashed #999; margin-top: 20px; }
-        .btn-umb { background: #34495e; width: 100%; margin-top: 10px; }
-        .status { text-align: center; color: #7f8c8d; font-size: 13px; margin-top: 10px; height: 15px; }
+        .umbuchung-box { background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e0; margin-top: 20px; }
+        .btn-umb { background: var(--primary); width: 100%; margin-top: 10px; }
+
+        #success-overlay {
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+            background:rgba(255,255,255,0.95); z-index:9999; justify-content:center; align-items:center; flex-direction:column;
+        }
     </style>
 </head>
 <body>
 
-<div id="success-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
-    <span style="font-size: 100px;">✅</span>
-    <h2 style="color:#27ae60; font-family:sans-serif;">Gesendet!</h2>
+<div id="success-overlay">
+    <span class="material-icons" style="font-size: 100px; color: var(--success);">check_circle</span>
+    <h2 style="color:var(--success); margin-top:10px;">Gesendet!</h2>
 </div>
-    
+
+<div class="side-nav">
+    <div id="btn-tab-eingabe" class="nav-btn active" onclick="switchTab('eingabe')" title="Eingabe">
+        <span class="material-icons">edit_note</span>
+    </div>
+    <div id="btn-tab-analyse" class="nav-btn" onclick="switchTab('analyse')" title="Analyse">
+        <span class="material-icons">insights</span>
+    </div>
+</div>
+
 <div class="card">
-    <div class="gesamt-container">
-        <span class="gesamt-label">Gesamtvermögen</span>
-        <span id="val-gesamt" class="gesamt-wert">... €</span>
-    </div>
+    
+    <div id="tab-eingabe" class="tab-content active">
+        <div class="gesamt-container">
+            <span id="val-gesamt" class="gesamt-wert">... €</span>
+            <small style="color:#999; font-weight:bold; text-transform:uppercase; font-size:10px;">Vermögen Aktuell</small>
+        </div>
 
-    <div class="grid">
-        <div class="stat"><b>Konto</b><span id="val-konto">...</span>€</div>
-        <div class="stat"><b>PayPal</b><span id="val-paypal">...</span>€</div>
-        <div class="stat"><b>Portemonnaie</b><span id="val-portemonnaie">...</span>€</div>
-        <div class="stat"><b>Münzglas</b><span id="val-muenzglas">...</span>€</div>
-    </div>
+        <div class="grid">
+            <div class="stat"><b>Konto</b><span id="val-konto">...</span>€</div>
+            <div class="stat"><b>PayPal</b><span id="val-paypal">...</span>€</div>
+            <div class="stat"><b>Wallet</b><span id="val-portemonnaie">...</span>€</div>
+            <div class="stat"><b>Münz</b><span id="val-muenzglas">...</span>€</div>
+        </div>
 
-    <hr>
-
-    <label>Konto / Quelle:</label>
-    <select id="reiter">
-        <option value="Konto">Konto (EC)</option>
-        <option value="Paypal">Paypal</option>
-        <option value="Kreditkarte">Kreditkarte</option>
-        <option value="Portemonnaie">Portemonnaie (Bar)</option>
-        <option value="Muenzglas">Münzglas</option>
-        <option value="Pfandbons">Pfandbons</option>
-        <option value="Wertmarken">Wertmarken</option>
-    </select>
-
-    <label>Datum:</label>
-    <input type="date" id="datum">
-
-    <label>Zweck (Beschreibung):</label>
-    <input type="text" id="zweck" placeholder="z.B. Rewe Einkauf">
-
-    <label>Hashtag (Kategorie):</label>
-    <input list="kat-liste" id="kategorie" placeholder="Wählen oder Tippen">
-    <datalist id="kat-liste">
-        <option value="Abos">
-        <option value="Aktivismus">
-        <option value="Essen">
-        <option value="Fortbewegung">
-        <option value="Freizeit">
-        <option value="Geschenke">
-        <option value="Hygiene">
-        <option value="Spenden">
-        <option value="Studium">
-        <option value="Style">
-        <option value="Technik">
-        <option value="Urlaub">
-        <option value="Wohnen">
-        <option value="Freizeit">
-        <option value="Job">
-        <option value="Staat">
-        <option value="Trinkgeld">
-        <option value="Bank">
-        <option value="Zuhause">
-        <option value="Großeltern">
-    </select>
-    </datalist>
-
-    <label>Betrag (€):</label>
-    <input type="number" id="betrag" placeholder="0.00" step="0.01" inputmode="decimal">
-
-    <div class="btn-group">
-        <button onclick="senden('aus')" class="btn-aus">Ausgabe (-)</button>
-        <button onclick="senden('ein')" class="btn-ein">Einnahme (+)</button>
-    </div>
-
-    <div class="umbuchung-box">
-        <label>Transfer NACH:</label>
-        <select id="ziel_reiter">
-            <option value="Portemonnaie">Portemonnaie (Bar)</option>
+        <label>Konto & Datum</label>
+        <select id="reiter">
             <option value="Konto">Konto (EC)</option>
             <option value="Paypal">Paypal</option>
+            <option value="Portemonnaie">Portemonnaie (Bar)</option>
             <option value="Muenzglas">Münzglas</option>
-            <option value="Pfandbons">Pfandbons</option>
-            <option value="Wertmarken">Wertmarken</option>
         </select>
-        <button onclick="senden('umbuchung')" class="btn-umb">Umbuchung bestätigen ⇄</button>
+        <input type="date" id="datum" style="margin-top:5px;">
+
+        <label>Beschreibung & Kategorie</label>
+        <input type="text" id="zweck" placeholder="z.B. Supermarkt">
+        <input list="kat-liste" id="kategorie" placeholder="Kategorie wählen" style="margin-top:5px;">
+        <datalist id="kat-liste">
+            <option value="Essen"><option value="Abos"><option value="Wohnen">
+            <option value="Fortbewegung"><option value="Freizeit"><option value="Job">
+            <option value="Staat"><option value="Zuhause">
+        </datalist>
+
+        <label>Betrag (€)</label>
+        <input type="number" id="betrag" placeholder="0.00" step="0.01" inputmode="decimal">
+
+        <div class="btn-group">
+            <button onclick="senden('aus')" class="btn-aus">Ausgabe</button>
+            <button onclick="senden('ein')" class="btn-ein">Einnahme</button>
+        </div>
+
+        <div class="umbuchung-box">
+            <label>Umbuchung nach:</label>
+            <select id="ziel_reiter">
+                <option value="Portemonnaie">Portemonnaie</option>
+                <option value="Konto">Konto</option>
+                <option value="Paypal">Paypal</option>
+            </select>
+            <button onclick="senden('umbuchung')" class="btn-umb">Transfer bestätigen</button>
+        </div>
     </div>
 
-    <p id="status" class="status"></p>
-    <button onclick="loadStats()" style="background:none; color:#999; width:100%; border:none; font-size:11px; margin-top:10px;">🔄 Daten aktualisieren</button>
+    <div id="tab-analyse" class="tab-content">
+        <div class="gesamt-container">
+            <span id="ana-bilanz" class="gesamt-wert">0.00 €</span>
+            <small id="anzeige-monat">Lade Monat...</small>
+        </div>
+
+        <div class="budget-box">
+            <div class="bar-text">
+                <span>Monatsbudget</span>
+                <span id="ana-budget-text">0 / 0 €</span>
+            </div>
+            <div class="bar-bg">
+                <div id="ana-budget-bar" class="bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="netto-grid">
+            <div class="netto-stat"><b>Abos</b><span id="ana-abos">0</span>€</div>
+            <div class="netto-stat"><b>Wohnen</b><span id="ana-wohnen">0</span>€</div>
+            <div class="netto-stat"><b>Mobil</b><span id="ana-mobil">0</span>€</div>
+            <div class="netto-stat"><b>Bank</b><span id="ana-bank">0</span>€</div>
+            <div class="netto-stat"><b>Essen</b><span id="ana-essen">0</span>€</div>
+            <div class="netto-stat"><b>Allg.</b><span id="ana-allg">0</span>€</div>
+        </div>
+        
+        <button onclick="ladeAnalyse()" style="background:none; color:#bbb; width:100%; border:none; font-size:11px; margin-top:30px; cursor:pointer;">DATEN AKTUALISIEREN</button>
+    </div>
+
+    <p id="status" style="text-align:center; font-size:12px; color:#ccc; margin-top:15px;"></p>
 </div>
 
 <script>
-   const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGDkieud8N_cGO7xeoTvDxwn7_fPTHSD6THuxaeInnfLTdf75arw/exec";
+    const GOOGLE_URL = "DEINE_SCRIPT_URL_HIER"; 
     
     let userPin = localStorage.getItem('finanz_pin') || prompt("Sicherheits-PIN:");
     if (userPin) localStorage.setItem('finanz_pin', userPin);
@@ -130,6 +197,14 @@
         document.getElementById('datum').valueAsDate = new Date();
         loadStats();
     };
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.getElementById('btn-tab-' + tab).classList.add('active');
+        if(tab === 'analyse') ladeAnalyse();
+    }
 
     async function loadStats() {
         try {
@@ -140,56 +215,74 @@
             document.getElementById('val-paypal').innerText = s.paypal.toFixed(2);
             document.getElementById('val-portemonnaie').innerText = s.portemonnaie.toFixed(2);
             document.getElementById('val-muenzglas').innerText = s.muenzglas.toFixed(2);
-            
-            // Farbe für Gesamtbetrag
             document.getElementById('val-gesamt').style.color = s.gesamt >= 0 ? "#27ae60" : "#e74c3c";
-        } catch(e) { console.log("Fehler beim Laden"); }
+        } catch(e) { console.log("Fehler Stats"); }
     }
 
-   async function senden(typ) {
-        const statusEl = document.getElementById('status');
+    async function ladeAnalyse() {
+        document.getElementById('status').innerText = "Abfrage läuft...";
+        try {
+            const r = await fetch(GOOGLE_URL + "?type=analyse");
+            const d = await r.json();
+            
+            document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
+            document.getElementById('ana-bilanz').innerText = d.bilanz.toFixed(2) + " €";
+            document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "#27ae60" : "#e74c3c";
+            
+            // BALKEN FARB-LOGIK
+            const prozent = Math.min((d.ausgabenGesamt / d.budgetMonat) * 100, 100);
+            const bar = document.getElementById('ana-budget-bar');
+            bar.style.width = prozent + "%";
+            
+            if(prozent < 70) {
+                bar.style.backgroundColor = "var(--success)"; // Grün
+            } else if(prozent < 100) {
+                bar.style.backgroundColor = "var(--warning)"; // Gelb
+            } else {
+                bar.style.backgroundColor = "var(--danger)";  // Rot
+            }
+
+            document.getElementById('ana-budget-text').innerText = d.ausgabenGesamt.toFixed(0) + " / " + d.budgetMonat + " €";
+
+            // Netto Werte Mapping
+            document.getElementById('ana-abos').innerText = d.nettoAbos.toFixed(2);
+            document.getElementById('ana-wohnen').innerText = d.nettoWohnen.toFixed(2);
+            document.getElementById('ana-mobil').innerText = d.nettoMobil.toFixed(2);
+            document.getElementById('ana-bank').innerText = d.nettoBank.toFixed(2);
+            document.getElementById('ana-essen').innerText = d.nettoEssen.toFixed(2);
+            document.getElementById('ana-allg').innerText = d.nettoAllgemein.toFixed(2);
+            
+            document.getElementById('status').innerText = "";
+        } catch(e) { document.getElementById('status').innerText = "Fehler!"; }
+    }
+
+    async function senden(typ) {
         const overlay = document.getElementById('success-overlay');
-        
         const data = {
             pin: userPin,
             reiter: document.getElementById('reiter').value,
             ziel: document.getElementById('ziel_reiter').value,
-            betrag: parseFloat(document.getElementById('betrag').value.replace(',', '.')),
+            betrag: parseFloat(document.getElementById('betrag').value),
             zweck: document.getElementById('zweck').value || "Transfer",
             kategorie: document.getElementById('kategorie').value || "Allgemein",
             datum: document.getElementById('datum').value,
             mode: typ
         };
 
-        if (isNaN(data.betrag)) return alert("Betrag eingeben!");
+        if (isNaN(data.betrag)) return alert("Bitte Betrag eingeben!");
 
-        statusEl.innerText = "Sende...";
-        
         try {
-            // POST an Google
             await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-            
-            // 1. Großes Overlay anzeigen
             overlay.style.display = 'flex';
-            
-            // 2. Felder zurücksetzen
             document.getElementById('betrag').value = "";
             document.getElementById('zweck').value = "";
-            document.getElementById('kategorie').value = "";
-            statusEl.innerText = "";
-
-            // 3. Nach 1,5 Sekunden: Overlay weg und Stats neu laden
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                loadStats();
-            }, 1500);
-
-        } catch(e) { 
-            statusEl.innerText = "❌ Fehler!";
-            console.error(e);
-        }
+            setTimeout(() => { 
+                overlay.style.display = 'none'; 
+                if(document.getElementById('tab-eingabe').classList.contains('active')) loadStats();
+                else ladeAnalyse();
+            }, 1200);
+        } catch(e) { alert("Verbindung fehlgeschlagen"); }
     }
 </script>
-
 </body>
 </html>
