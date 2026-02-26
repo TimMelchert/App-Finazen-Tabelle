@@ -188,28 +188,37 @@
 </div>
 
 <script>
-    const GOOGLE_URL = "DEINE_SCRIPT_URL_HIER"; 
+  // DEINE URL (achte darauf, dass sie auf /exec endet)
+const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGDkieud8N_cGO7xeoTvDxwn7_fPTHSD6THuxaeInnfLTdf75arw/exec"; 
+
+let userPin = localStorage.getItem('finanz_pin') || prompt("Sicherheits-PIN:");
+if (userPin) localStorage.setItem('finanz_pin', userPin);
+
+// Wird beim Laden der Seite ausgeführt
+window.onload = () => {
+    document.getElementById('datum').valueAsDate = new Date();
+    loadStats(); // Startet mit den Kontoständen
+};
+
+// Tab-Wechsel Logik
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('btn-tab-' + tab).classList.add('active');
     
-    let userPin = localStorage.getItem('finanz_pin') || prompt("Sicherheits-PIN:");
-    if (userPin) localStorage.setItem('finanz_pin', userPin);
+    // Wenn man auf Analyse klickt, Daten frisch laden
+    if(tab === 'analyse') ladeAnalyse();
+}
 
-    window.onload = () => {
-        document.getElementById('datum').valueAsDate = new Date();
-        loadStats();
-    };
+// --- TEIL 1: DATEN LADEN (GET) ---
 
-    function switchTab(tab) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('tab-' + tab).classList.add('active');
-        document.getElementById('btn-tab-' + tab).classList.add('active');
-        if(tab === 'analyse') ladeAnalyse();
-    }
-
-    // Lädt die Kontostände (Eingabe-Tab)
-function loadStats() {
+async function loadStats() {
     document.getElementById('status').innerText = "Lade Kontostände...";
-    google.script.run.withSuccessHandler(function(s) {
+    try {
+        const response = await fetch(GOOGLE_URL + "?type=stats");
+        const s = await response.json();
+        
         document.getElementById('val-gesamt').innerText = s.gesamt.toFixed(2) + " €";
         document.getElementById('val-konto').innerText = s.konto.toFixed(2);
         document.getElementById('val-paypal').innerText = s.paypal.toFixed(2);
@@ -217,29 +226,37 @@ function loadStats() {
         document.getElementById('val-muenzglas').innerText = s.muenzglas.toFixed(2);
         document.getElementById('val-gesamt').style.color = s.gesamt >= 0 ? "#27ae60" : "#e74c3c";
         document.getElementById('status').innerText = "";
-    }).getStats();
+    } catch (e) {
+        document.getElementById('status').innerText = "Fehler beim Laden der Stats";
+    }
 }
 
-// Lädt die Analyse-Werte (Analyse-Tab)
-function ladeAnalyse() {
-    document.getElementById('status').innerText = "Analyse wird berechnet...";
-    google.script.run.withSuccessHandler(function(d) {
+async function ladeAnalyse() {
+    document.getElementById('status').innerText = "Analyse wird geladen...";
+    try {
+        const response = await fetch(GOOGLE_URL + "?type=analyse");
+        const d = await response.json();
+        
         document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
         document.getElementById('ana-bilanz').innerText = d.bilanz.toFixed(2) + " €";
         document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "#27ae60" : "#e74c3c";
         
-        // Balken-Logik
+        // BUDGET-BALKEN LOGIK (Grün -> Gelb (70%) -> Rot (100%))
         const prozent = d.budgetMonat > 0 ? Math.min((d.ausgabenGesamt / d.budgetMonat) * 100, 100) : 0;
         const bar = document.getElementById('ana-budget-bar');
         bar.style.width = prozent + "%";
         
-        if(prozent < 70) bar.style.backgroundColor = "#27ae60"; // Grün
-        else if(prozent < 100) bar.style.backgroundColor = "#f1c40f"; // Gelb
-        else bar.style.backgroundColor = "#e74c3c"; // Rot
+        if(prozent < 70) {
+            bar.style.backgroundColor = "#27ae60"; // Grün
+        } else if(prozent < 100) {
+            bar.style.backgroundColor = "#f1c40f"; // Gelb
+        } else {
+            bar.style.backgroundColor = "#e74c3c"; // Rot
+        }
 
-        document.getElementById('ana-budget-text').innerText = d.ausgabenGesamt.toFixed(0) + " / " + d.budgetMonat + " €";
+        document.getElementById('ana-budget-text').innerText = Math.round(d.ausgabenGesamt) + " / " + d.budgetMonat + " €";
 
-        // Netto-Kacheln füllen
+        // Netto Werte
         document.getElementById('ana-abos').innerText = d.nettoAbos.toFixed(2);
         document.getElementById('ana-wohnen').innerText = d.nettoWohnen.toFixed(2);
         document.getElementById('ana-mobil').innerText = d.nettoMobil.toFixed(2);
@@ -248,36 +265,54 @@ function ladeAnalyse() {
         document.getElementById('ana-allg').innerText = d.nettoAllgemein.toFixed(2);
         
         document.getElementById('status').innerText = "";
-    }).getAnalyseData();
+    } catch (e) {
+        document.getElementById('status').innerText = "Fehler bei Analyse-Abfrage";
+    }
 }
 
-    async function senden(typ) {
-        const overlay = document.getElementById('success-overlay');
-        const data = {
-            pin: userPin,
-            reiter: document.getElementById('reiter').value,
-            ziel: document.getElementById('ziel_reiter').value,
-            betrag: parseFloat(document.getElementById('betrag').value),
-            zweck: document.getElementById('zweck').value || "Transfer",
-            kategorie: document.getElementById('kategorie').value || "Allgemein",
-            datum: document.getElementById('datum').value,
-            mode: typ
-        };
+// --- TEIL 2: DATEN SENDEN (POST) ---
 
-        if (isNaN(data.betrag)) return alert("Bitte Betrag eingeben!");
+async function senden(typ) {
+    const overlay = document.getElementById('success-overlay');
+    const data = {
+        pin: userPin,
+        reiter: document.getElementById('reiter').value,
+        ziel: document.getElementById('ziel_reiter').value,
+        betrag: parseFloat(document.getElementById('betrag').value),
+        zweck: document.getElementById('zweck').value || "Transfer",
+        kategorie: document.getElementById('kategorie').value || "Allgemein",
+        datum: document.getElementById('datum').value,
+        mode: typ
+    };
 
-        try {
-            await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-            overlay.style.display = 'flex';
-            document.getElementById('betrag').value = "";
-            document.getElementById('zweck').value = "";
-            setTimeout(() => { 
-                overlay.style.display = 'none'; 
-                if(document.getElementById('tab-eingabe').classList.contains('active')) loadStats();
-                else ladeAnalyse();
-            }, 1200);
-        } catch(e) { alert("Verbindung fehlgeschlagen"); }
+    if (isNaN(data.betrag)) return alert("Bitte Betrag eingeben!");
+
+    document.getElementById('status').innerText = "Wird gespeichert...";
+
+    try {
+        // mode: 'no-cors' ist wichtig für den POST von GitHub zu Google
+        await fetch(GOOGLE_URL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            body: JSON.stringify(data) 
+        });
+
+        // Erfolg anzeigen
+        overlay.style.display = 'flex';
+        document.getElementById('betrag').value = "";
+        document.getElementById('zweck').value = "";
+        
+        setTimeout(() => { 
+            overlay.style.display = 'none'; 
+            // Nach dem Senden Zahlen aktualisieren
+            if(document.getElementById('tab-eingabe').classList.contains('active')) loadStats();
+            else ladeAnalyse();
+        }, 1200);
+    } catch(e) { 
+        alert("Fehler beim Senden!"); 
+        document.getElementById('status').innerText = "";
     }
+}
 </script>
 </body>
 </html>
