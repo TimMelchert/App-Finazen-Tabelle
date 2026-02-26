@@ -206,55 +206,50 @@
         if(tab === 'analyse') ladeAnalyse();
     }
 
-    async function loadStats() {
-        try {
-            const r = await fetch(GOOGLE_URL);
-            const s = await r.json();
-            document.getElementById('val-gesamt').innerText = s.gesamt.toFixed(2) + " €";
-            document.getElementById('val-konto').innerText = s.konto.toFixed(2);
-            document.getElementById('val-paypal').innerText = s.paypal.toFixed(2);
-            document.getElementById('val-portemonnaie').innerText = s.portemonnaie.toFixed(2);
-            document.getElementById('val-muenzglas').innerText = s.muenzglas.toFixed(2);
-            document.getElementById('val-gesamt').style.color = s.gesamt >= 0 ? "#27ae60" : "#e74c3c";
-        } catch(e) { console.log("Fehler Stats"); }
-    }
+    // Lädt die Kontostände (Eingabe-Tab)
+function loadStats() {
+    document.getElementById('status').innerText = "Lade Kontostände...";
+    google.script.run.withSuccessHandler(function(s) {
+        document.getElementById('val-gesamt').innerText = s.gesamt.toFixed(2) + " €";
+        document.getElementById('val-konto').innerText = s.konto.toFixed(2);
+        document.getElementById('val-paypal').innerText = s.paypal.toFixed(2);
+        document.getElementById('val-portemonnaie').innerText = s.portemonnaie.toFixed(2);
+        document.getElementById('val-muenzglas').innerText = s.muenzglas.toFixed(2);
+        document.getElementById('val-gesamt').style.color = s.gesamt >= 0 ? "#27ae60" : "#e74c3c";
+        document.getElementById('status').innerText = "";
+    }).getStats();
+}
 
-    async function ladeAnalyse() {
-        document.getElementById('status').innerText = "Abfrage läuft...";
-        try {
-            const r = await fetch(GOOGLE_URL + "?type=analyse");
-            const d = await r.json();
-            
-            document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
-            document.getElementById('ana-bilanz').innerText = d.bilanz.toFixed(2) + " €";
-            document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "#27ae60" : "#e74c3c";
-            
-            // BALKEN FARB-LOGIK
-            const prozent = Math.min((d.ausgabenGesamt / d.budgetMonat) * 100, 100);
-            const bar = document.getElementById('ana-budget-bar');
-            bar.style.width = prozent + "%";
-            
-            if(prozent < 70) {
-                bar.style.backgroundColor = "var(--success)"; // Grün
-            } else if(prozent < 100) {
-                bar.style.backgroundColor = "var(--warning)"; // Gelb
-            } else {
-                bar.style.backgroundColor = "var(--danger)";  // Rot
-            }
+// Lädt die Analyse-Werte (Analyse-Tab)
+function ladeAnalyse() {
+    document.getElementById('status').innerText = "Analyse wird berechnet...";
+    google.script.run.withSuccessHandler(function(d) {
+        document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
+        document.getElementById('ana-bilanz').innerText = d.bilanz.toFixed(2) + " €";
+        document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "#27ae60" : "#e74c3c";
+        
+        // Balken-Logik
+        const prozent = d.budgetMonat > 0 ? Math.min((d.ausgabenGesamt / d.budgetMonat) * 100, 100) : 0;
+        const bar = document.getElementById('ana-budget-bar');
+        bar.style.width = prozent + "%";
+        
+        if(prozent < 70) bar.style.backgroundColor = "#27ae60"; // Grün
+        else if(prozent < 100) bar.style.backgroundColor = "#f1c40f"; // Gelb
+        else bar.style.backgroundColor = "#e74c3c"; // Rot
 
-            document.getElementById('ana-budget-text').innerText = d.ausgabenGesamt.toFixed(0) + " / " + d.budgetMonat + " €";
+        document.getElementById('ana-budget-text').innerText = d.ausgabenGesamt.toFixed(0) + " / " + d.budgetMonat + " €";
 
-            // Netto Werte Mapping
-            document.getElementById('ana-abos').innerText = d.nettoAbos.toFixed(2);
-            document.getElementById('ana-wohnen').innerText = d.nettoWohnen.toFixed(2);
-            document.getElementById('ana-mobil').innerText = d.nettoMobil.toFixed(2);
-            document.getElementById('ana-bank').innerText = d.nettoBank.toFixed(2);
-            document.getElementById('ana-essen').innerText = d.nettoEssen.toFixed(2);
-            document.getElementById('ana-allg').innerText = d.nettoAllgemein.toFixed(2);
-            
-            document.getElementById('status').innerText = "";
-        } catch(e) { document.getElementById('status').innerText = "Fehler!"; }
-    }
+        // Netto-Kacheln füllen
+        document.getElementById('ana-abos').innerText = d.nettoAbos.toFixed(2);
+        document.getElementById('ana-wohnen').innerText = d.nettoWohnen.toFixed(2);
+        document.getElementById('ana-mobil').innerText = d.nettoMobil.toFixed(2);
+        document.getElementById('ana-bank').innerText = d.nettoBank.toFixed(2);
+        document.getElementById('ana-essen').innerText = d.nettoEssen.toFixed(2);
+        document.getElementById('ana-allg').innerText = d.nettoAllgemein.toFixed(2);
+        
+        document.getElementById('status').innerText = "";
+    }).getAnalyseData();
+}
 
     async function senden(typ) {
         const overlay = document.getElementById('success-overlay');
