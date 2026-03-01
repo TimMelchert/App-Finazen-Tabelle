@@ -124,11 +124,13 @@
             <small style="color:#999; font-weight:bold; text-transform:uppercase; font-size:10px;">Vermögen Aktuell</small>
         </div>
 
-        <div class="grid">
+        <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
             <div class="stat"><b>Konto</b><span id="val-konto">...</span></div>
             <div class="stat"><b>PayPal</b><span id="val-paypal">...</span></div>
-            <div class="stat"><b>Portemonnaie</b><span id="val-portemonnaie">...</span></div>
-            <div class="stat"><b>Münzglas</b><span id="val-muenzglas">...</span></div>
+            <div class="stat"><b>Kreditkarte</b><span id="val-kreditkarte">...</span></div>
+            <div class="stat"><b>Bar</b><span id="val-portemonnaie">...</span></div>
+            <div class="stat"><b>Münzen</b><span id="val-muenzglas">...</span></div>
+            <div class="stat"><b>Pfand</b><span id="val-pfandbons">...</span></div>
         </div>
 
         <label>Konto</label>
@@ -238,7 +240,7 @@
         if(tab === 'analyse') ladeAnalyse();
     }
 
-    async function loadStats() {
+   async function loadStats() {
         document.getElementById('status').innerText = "Lade Kontostände...";
         try {
             const response = await fetch(GOOGLE_URL + "?type=stats");
@@ -246,8 +248,11 @@
             document.getElementById('val-gesamt').innerText = s.gesamt.toFixed(2) + " €";
             document.getElementById('val-konto').innerText = s.konto.toFixed(2);
             document.getElementById('val-paypal').innerText = s.paypal.toFixed(2);
+            document.getElementById('val-kreditkarte').innerText = s.kreditkarte.toFixed(2); // NEU
             document.getElementById('val-portemonnaie').innerText = s.portemonnaie.toFixed(2);
             document.getElementById('val-muenzglas').innerText = s.muenzglas.toFixed(2);
+            document.getElementById('val-pfandbons').innerText = s.pfandbons.toFixed(2);     // NEU
+            
             document.getElementById('val-gesamt').style.color = s.gesamt >= 0 ? "#27ae60" : "#e74c3c";
             document.getElementById('status').innerText = "";
         } catch(e) { 
