@@ -318,6 +318,7 @@
             overlay.style.display = 'flex';
             betragField.value = "";
             zweckField.value = "";
+            document.getElementById('kategorie').value = "";
             setTimeout(() => { 
                 overlay.style.display = 'none'; 
                 if(document.getElementById('tab-eingabe').classList.contains('active')) loadStats();
