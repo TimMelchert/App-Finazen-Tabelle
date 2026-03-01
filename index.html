@@ -135,19 +135,36 @@
         <select id="reiter">
             <option value="Konto">Konto (EC)</option>
             <option value="Paypal">Paypal</option>
+            <option value="Kreditkarte">Kreditkarte</option>
             <option value="Portemonnaie">Portemonnaie (Bar)</option>
             <option value="Muenzglas">Münzglas</option>
+            <option value="Pfandbons">Pfandbons</option>
         </select>
         <input type="date" id="datum">
 
-        <label>Beschreibung & Kategorie</label>
+        <label>Zweck</label>
         <input type="text" id="zweck" placeholder="z.B. Rewe Einkauf">
         <input list="kat-liste" id="kategorie" placeholder="Kategorie wählen">
         <datalist id="kat-liste">
-            <option value="Essen"><option value="Abos"><option value="Wohnen">
-            <option value="Fortbewegung"><option value="Freizeit"><option value="Job">
-            <option value="Staat"><option value="Zuhause"><option value="Versicherung">
-            <option value="Hygiene"><option value="Geschenk">
+            <option value="Abos">
+            <option value="Aktivismus">
+            <option value="Essen">
+            <option value="Fortbewegung">
+            <option value="Freizeit">
+            <option value="Geschenk">
+            <option value="Hygiene">
+            <option value="Spenden">
+            <option value="Studium">
+            <option value="Style">
+            <option value="Technik">
+            <option value="Urlaub">
+            <option value="Wohnen">
+                
+            <option value="Bank">
+            <option value="Großeltern">
+            <option value="Job">
+            <option value="Staat">
+            <option value="Zuhause">
         </datalist>
 
         <label>Betrag (€)</label>
@@ -161,14 +178,16 @@
         <div class="umbuchung-box">
             <label>Umbuchung nach:</label>
             <select id="ziel_reiter">
-                <option value="Portemonnaie">Portemonnaie</option>
                 <option value="Konto">Konto</option>
                 <option value="Paypal">Paypal</option>
+                <option value="Kreditkarte">Kreditkarte</option>
+                <option value="Portemonnaie">Portemonnaie</option>
+                <option value="Muenzglas">Münzglas</option>
+                <option value="Pfandbons">Pfandbons</option>
             </select>
             <button onclick="senden('umbuchung')" class="btn-umb">Transfer bestätigen</button>
         </div>
-    </div>
-
+        
     <div id="tab-analyse" class="tab-content">
         <div class="gesamt-container">
             <span id="ana-bilanz" class="gesamt-wert">0.00 €</span>
