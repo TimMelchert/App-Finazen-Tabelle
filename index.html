@@ -171,14 +171,15 @@
             <option value="Zuhause">
         </datalist>
         
-        <div style="display: flex; align-items: center; margin: 15px 0; background: #f8f9fa; padding: 12px; border-radius: 12px; border: 1px dashed #cbd5e0;">
-            <input type="checkbox" id="split" style="width: 20px; height: 20px; margin-right: 12px; cursor: pointer; accent-color: #27ae60;">
-            <label for="split" style="margin: 0; cursor: pointer; font-size: 14px; font-weight: 500; color: #4a5568;">
-                Ausgabe mit Freundin teilen (50/50)
-            </label>
+        <label>Betrag (€) & Split</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+        <input type="number" id="betrag" placeholder="0.00" step="0.01" inputmode="decimal" style="flex: 1; margin-bottom: 0;">
+
+        <div style="display: flex; flex-direction: column; align-items: center; background: #f1f3f4; padding: 5px 10px; border-radius: 10px; border: 1px solid #ddd; min-width: 60px;">
+        <input type="checkbox" id="split" style="width: 20px; height: 20px; cursor: pointer; accent-color: #27ae60; margin: 0;">
+        <span style="font-size: 10px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; margin-top: 2px;">Split</span>
         </div>
-        <label>Betrag (€)</label>
-        <input type="number" id="betrag" placeholder="0.00" step="0.01" inputmode="decimal">
+        </div>
 
         <div class="btn-group">
             <button onclick="senden('aus')" class="btn-aus">Ausgabe</button>
