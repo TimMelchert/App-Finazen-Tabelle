@@ -288,94 +288,101 @@
         if(tab === 'analyse') ladeAnalyse();
     }
 
-   async function loadStats() {
-        document.getElementById('status').innerText = "Lade Kontostände...";
+    async function loadStats() {
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = "Lade Kontostände...";
         try {
             const response = await fetch(GOOGLE_URL + "?type=stats");
             const s = await response.json();
             document.getElementById('val-gesamt').innerText = s.gesamt.toFixed(2) + " €";
             document.getElementById('val-konto').innerText = s.konto.toFixed(2);
             document.getElementById('val-paypal').innerText = s.paypal.toFixed(2);
-            document.getElementById('val-kreditkarte').innerText = s.kreditkarte.toFixed(2); // NEU
+            document.getElementById('val-kreditkarte').innerText = s.kreditkarte.toFixed(2);
             document.getElementById('val-portemonnaie').innerText = s.portemonnaie.toFixed(2);
             document.getElementById('val-muenzglas').innerText = s.muenzglas.toFixed(2);
-            document.getElementById('val-pfandbons').innerText = s.pfandbons.toFixed(2);     // NEU
+            document.getElementById('val-pfandbons').innerText = s.pfandbons.toFixed(2);
             
             document.getElementById('val-gesamt').style.color = s.gesamt >= 0 ? "#27ae60" : "#e74c3c";
-            document.getElementById('status').innerText = "";
+            statusEl.innerText = "";
         } catch(e) { 
-            document.getElementById('status').innerText = "Ladefehler (Stats)"; 
+            statusEl.innerText = "Ladefehler (Stats)"; 
         }
     }
 
-   let chartAus = null; // Speichert das Ausgaben-Diagramm
-    let chartEin = null; // Speichert das Einnahmen-Diagramm
+    let chartAus = null;
+    let chartEin = null;
 
-   async function ladeAnalyse() {
-    document.getElementById('status').innerText = "Analyse wird berechnet...";
-    try {
-        const response = await fetch(GOOGLE_URL + "?type=analyse");
-        const d = await response.json();
-        
-        // Kopfdaten
-        document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
-        document.getElementById('ana-bilanz').innerText = d.bilanz.toFixed(2) + " €";
-        document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "var(--success)" : "var(--danger)";
-        
-        // Budget-Balken
-        const prozent = d.budgetMonat > 0 ? Math.min((d.ausgabenGesamt / d.budgetMonat) * 100, 100) : 0;
-        const bar = document.getElementById('ana-budget-bar');
-        if (bar) {
-            bar.style.width = prozent + "%";
-            bar.style.backgroundColor = prozent < 80 ? "var(--success)" : "var(--danger)";
-        }
-        document.getElementById('ana-budget-text').innerText = Math.round(d.ausgabenGesamt) + " / " + d.budgetMonat + " €";
-
-        // Netto-Kacheln
-        const kacheln = {
-            'ana-abos': d.nettoAbos, 'ana-wohnen': d.nettoWohnen, 
-            'ana-mobil': d.nettoMobil, 'ana-bank': d.nettoBank, 
-            'ana-essen': d.nettoEssen, 'ana-allg': d.nettoAllgemein
-        };
-        for (let id in kacheln) {
-            const el = document.getElementById(id);
-            if (el) el.innerText = kacheln[id].toFixed(2);
-        }
-
-        // --- CSS FIX GEGEN DAS FALLEN ---
-        // Wir erzwingen per JS eine feste Höhe für die Container der Charts
-        const chartIds = ['chartAusgaben', 'chartEinnahmen'];
-        chartIds.forEach(id => {
-            const canvas = document.getElementById(id);
-            if (canvas && canvas.parentElement) {
-                canvas.parentElement.style.height = "200px"; // Feste Höhe
-                canvas.parentElement.style.position = "relative";
+    async function ladeAnalyse() {
+        document.getElementById('status').innerText = "Analyse wird berechnet...";
+        try {
+            const response = await fetch(GOOGLE_URL + "?type=analyse");
+            const d = await response.json();
+            
+            document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
+            document.getElementById('ana-bilanz').innerText = d.bilanz.toFixed(2) + " €";
+            document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "var(--success)" : "var(--danger)";
+            
+            // Budget-Balken
+            const prozent = d.budgetMonat > 0 ? Math.min((d.ausgabenGesamt / d.budgetMonat) * 100, 100) : 0;
+            const bar = document.getElementById('ana-budget-bar');
+            if (bar) {
+                bar.style.width = prozent + "%";
+                bar.style.backgroundColor = prozent < 80 ? "var(--success)" : "var(--danger)";
             }
-        });
+            document.getElementById('ana-budget-text').innerText = Math.round(d.ausgabenGesamt) + " / " + d.budgetMonat + " €";
+
+            // Netto-Kacheln
+            const kacheln = {
+                'ana-abos': d.nettoAbos, 'ana-wohnen': d.nettoWohnen, 
+                'ana-mobil': d.nettoMobil, 'ana-bank': d.nettoBank, 
+                'ana-essen': d.nettoEssen, 'ana-allg': d.nettoAllgemein
+            };
+            for (let id in kacheln) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = kacheln[id].toFixed(2);
+            }
+
+            // Charts Logik
+            renderCharts(d);
+
+            // JAHRESTABELLE
+            const tbody = document.getElementById('jahres-tabelle-body');
+            if (tbody && d.jahresUebersicht) {
+                tbody.innerHTML = "";
+                d.jahresUebersicht.forEach(m => {
+                    if (m.monat) {
+                        const tr = document.createElement('tr');
+                        const bilanzClass = m.bilanz >= 0 ? 'positiv' : 'negativ';
+                        tr.innerHTML = `
+                            <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
+                            <td class="td-val">${m.ausgaben.toFixed(2)} €</td>
+                            <td class="td-val positiv">${m.einnahmen.toFixed(2)} €</td>
+                            <td class="td-val ${bilanzClass}">${m.bilanz.toFixed(2)} €</td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                });
+            }
+            document.getElementById('status').innerText = "";
+        } catch(e) {
+            document.getElementById('status').innerText = "Fehler beim Laden der Analyse";
+            console.error(e);
+        }
+    }
+
+    function renderCharts(d) {
+        const chartOptions = {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 8, font: { size: 9 }, padding: 10 } } },
+            cutout: '65%'
+        };
 
         const filterData = (labels, values, colors) => {
             const fL = [], fV = [], fC = [];
             values.forEach((v, i) => {
-                if (Math.abs(v) > 0.1) {
-                    fL.push(labels[i]);
-                    fV.push(Math.abs(v));
-                    fC.push(colors[i]);
-                }
+                if (Math.abs(v) > 0.1) { fL.push(labels[i]); fV.push(Math.abs(v)); fC.push(colors[i]); }
             });
             return { labels: fL, values: fV, colors: fC };
-        };
-
-        const chartOptions = {
-            responsive: true,
-            maintainAspectRatio: false, // WICHTIG: Damit die 200px Höhe beachtet werden
-            plugins: {
-                legend: { 
-                    display: true, 
-                    position: 'bottom', 
-                    labels: { boxWidth: 8, font: { size: 9 }, padding: 10 } 
-                }
-            },
-            cutout: '65%'
         };
 
         // Ausgaben Chart
@@ -391,70 +398,38 @@
             options: chartOptions
         });
 
-        // Einnahmen Chart - KORRIGIERT: d.einJob hinzugefügt
+        // Einnahmen Chart
         const ein = filterData(
             ['Job', 'Allg.', 'Zuhause', 'Staat', 'Tip', 'Bank', 'Oma', 'Sonst.'],
             [d.einJob || 0, d.einAllg || 0, d.einZuhause || 0, d.einStaat || 0, d.einTrinkgeld || 0, d.einBank || 0, d.einOma || 0, d.einSonstige || 0],
             ['#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#f1c40f', '#34495e', '#e67e22', '#bdc3c7']
         );
-        
         if (chartEin) chartEin.destroy();
         chartEin = new Chart(document.getElementById('chartEinnahmen'), {
             type: 'doughnut',
-            data: { 
-                labels: ein.labels, 
-                datasets: [{ 
-                    data: ein.values, 
-                    backgroundColor: ein.colors, 
-                    borderWidth: 1 
-                }] 
-            },
+            data: { labels: ein.labels, datasets: [{ data: ein.values, backgroundColor: ein.colors, borderWidth: 1 }] },
             options: chartOptions
         });
-    
-    const tbody = document.getElementById('jahres-tabelle-body');
-if (tbody && d.jahresUebersicht) {
-    tbody.innerHTML = "";
-    
-    d.jahresUebersicht.forEach(m => {
-        // Wir prüfen nur noch, ob der Monatsname existiert (nicht leer ist)
-        if (m.monat && m.monat.toString().trim() !== "") {
-            const tr = document.createElement('tr');
-            
-            // Farb-Logik für die Bilanz
-            const bilanzClass = m.bilanz >= 0 ? 'positiv' : 'negativ';
-            
-            tr.innerHTML = `
-                <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
-                <td class="td-val">${m.ausgaben.toFixed(2)} €</td>
-                <td class="td-val positiv">${m.einnahmen.toFixed(2)} €</td>
-                <td class="td-val ${bilanzClass}">${m.bilanz.toFixed(2)} €</td>
-            `;
-            tbody.appendChild(tr);
-        }
-    });
-}
+    }
 
-   async function senden(typ) {
-    const overlay = document.getElementById('success-overlay');
-    const betragField = document.getElementById('betrag');
-    const zweckField = document.getElementById('zweck');
-    
-    // NEU: Checkbox Status abfragen
-    const isSplit = document.getElementById('split') ? document.getElementById('split').checked : false;
+    async function senden(typ) {
+        const overlay = document.getElementById('success-overlay');
+        const betragField = document.getElementById('betrag');
+        const zweckField = document.getElementById('zweck');
+        const isSplit = document.getElementById('split') ? document.getElementById('split').checked : false;
 
-    const data = {
-        pin: userPin,
-        reiter: document.getElementById('reiter').value,
-        ziel: document.getElementById('ziel_reiter').value,
-        betrag: parseFloat(betragField.value),
-        zweck: zweckField.value || "Transfer",
-        kategorie: document.getElementById('kategorie').value || "Allgemein",
-        datum: document.getElementById('datum').value,
-        split: isSplit,
-        mode: typ
-    };
-       
+        const data = {
+            pin: userPin,
+            reiter: document.getElementById('reiter').value,
+            ziel: document.getElementById('ziel_reiter').value,
+            betrag: parseFloat(betragField.value),
+            zweck: zweckField.value || "Transfer",
+            kategorie: document.getElementById('kategorie').value || "Allgemein",
+            datum: document.getElementById('datum').value,
+            split: isSplit,
+            mode: typ
+        };
+        
         if (isNaN(data.betrag)) return alert("Bitte Betrag eingeben!");
         document.getElementById('status').innerText = "Speichere...";
 
@@ -464,8 +439,8 @@ if (tbody && d.jahresUebersicht) {
             betragField.value = "";
             zweckField.value = "";
             document.getElementById('kategorie').value = "";
-            const splitBox = document.getElementById('split');
-            if (splitBox) splitBox.checked = false;
+            if (document.getElementById('split')) document.getElementById('split').checked = false;
+            
             setTimeout(() => { 
                 overlay.style.display = 'none'; 
                 if(document.getElementById('tab-eingabe').classList.contains('active')) loadStats();
