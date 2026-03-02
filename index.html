@@ -114,8 +114,10 @@
         .uebersicht-table td { padding: 10px; border-top: 1px solid #f0f0f0; }
         .uebersicht-table tr:last-child td { border-bottom: none; }
         .td-val { text-align: right; font-weight: bold; }
-        .negativ { color: var(--danger); }
-        .positiv { color: var(--success); }
+        .positiv { color: #27ae60 !important; }
+        .negativ { color: #e74c3c !important; }
+
+        .uebersicht-table tr:last-child td { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -251,16 +253,15 @@
     </div>
 
     <table class="uebersicht-table">
-        <thead>
-            <tr>
-                <th>Monat</th>
-                <th style="text-align:right">Ausgaben</th>
-                <th style="text-align:right">Bilanz</th>
-            </tr>
-        </thead>
-        <tbody id="jahres-tabelle-body">
-            </tbody>
-    </table>
+    <thead>
+        <tr>
+            <th>Monat</th>
+            <th style="text-align:right">Ausgaben</th>
+            <th style="text-align:right">Einnahmen</th> <th style="text-align:right">Bilanz</th>
+        </tr>
+    </thead>
+    <tbody id="jahres-tabelle-body"></tbody>
+</table>
             
     <button onclick="ladeAnalyse()" style="background:none; color:#bbb; width:100%; border:none; font-size:11px; margin-top:30px; cursor:pointer;">DATEN AKTUALISIEREN</button>
 </div>
