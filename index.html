@@ -280,59 +280,62 @@
         const response = await fetch(GOOGLE_URL + "?type=analyse");
         const d = await response.json();
         
-        // Kopfdaten & Bilanz
+        // 1. Kopfdaten & Bilanz aktualisieren
         document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
         document.getElementById('ana-bilanz').innerText = d.bilanz.toFixed(2) + " €";
-        document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "#27ae60" : "#e74c3c";
+        document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "var(--success)" : "var(--danger)";
         
-        // Budget-Balken
+        // 2. Budget-Balken (Min/Max Logik für Stabilität)
         const prozent = d.budgetMonat > 0 ? Math.min((d.ausgabenGesamt / d.budgetMonat) * 100, 100) : 0;
         const bar = document.getElementById('ana-budget-bar');
-        bar.style.width = prozent + "%";
-        bar.style.backgroundColor = prozent < 70 ? "var(--success)" : (prozent < 100 ? "var(--warning)" : "var(--danger)");
+        if (bar) {
+            bar.style.width = prozent + "%";
+            bar.style.backgroundColor = prozent < 80 ? "var(--success)" : "var(--danger)";
+        }
         document.getElementById('ana-budget-text').innerText = Math.round(d.ausgabenGesamt) + " / " + d.budgetMonat + " €";
 
-        // Netto-Kacheln (Zahlenwerte)
-        document.getElementById('ana-abos').innerText = d.nettoAbos.toFixed(2);
-        document.getElementById('ana-wohnen').innerText = d.nettoWohnen.toFixed(2);
-        document.getElementById('ana-mobil').innerText = d.nettoMobil.toFixed(2);
-        document.getElementById('ana-bank').innerText = d.nettoBank.toFixed(2);
-        document.getElementById('ana-essen').innerText = d.nettoEssen.toFixed(2);
-        document.getElementById('ana-allg').innerText = d.nettoAllgemein.toFixed(2);
+        // 3. Kacheln (Netto-Werte)
+        const kacheln = {
+            'ana-abos': d.nettoAbos, 'ana-wohnen': d.nettoWohnen, 
+            'ana-mobil': d.nettoMobil, 'ana-bank': d.nettoBank, 
+            'ana-essen': d.nettoEssen, 'ana-allg': d.nettoAllgemein
+        };
+        for (let id in kacheln) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = kacheln[id].toFixed(2);
+        }
 
-        // --- HELFER-FUNKTION: FILTERT NULL-WERTE AUS ---
-        const filterEmpty = (labels, values, colors) => {
-            const fLabels = [], fValues = [], fColors = [];
+        // --- HELFER: Filtert Kategorien mit 0 € aus ---
+        const filterData = (labels, values, colors) => {
+            const fL = [], fV = [], fC = [];
             values.forEach((v, i) => {
-                if (Math.abs(v) > 0.01) { // Nur Kategorien über 1 Cent anzeigen
-                    fLabels.push(labels[i]);
-                    fValues.push(Math.abs(v));
-                    fColors.push(colors[i]);
+                if (Math.abs(v) > 0.1) { // Nur anzeigen wenn > 10 Cent
+                    fL.push(labels[i]);
+                    fV.push(Math.abs(v));
+                    fC.push(colors[i]);
                 }
             });
-            return { labels: fLabels, values: fValues, colors: fColors };
+            return { labels: fL, values: fV, colors: fC };
         };
 
-        const commonOptions = {
+        // --- CHART KONFIGURATION (Wichtig: maintainAspectRatio!) ---
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false, // Verhindert das "Wachsen" ins Unendliche
             plugins: {
                 legend: { 
                     display: true, 
-                    position: 'bottom',
-                    labels: { 
-                        boxWidth: 8, 
-                        font: { size: 10 },
-                        padding: 10
-                    } 
+                    position: 'bottom', 
+                    labels: { boxWidth: 8, font: { size: 9 }, padding: 8 } 
                 },
                 tooltip: { callbacks: { label: (c) => c.label + ': ' + c.raw.toFixed(2) + ' €' } }
             },
-            cutout: '60%',
-            maintainAspectRatio: false
+            cutout: '65%'
         };
 
-        // --- CHART AUSGABEN (Gefiltert) ---
-        const ausData = filterEmpty(
-            ['Allg.', 'Essen', 'Freizeit', 'Hyg.', 'Spend.', 'Style', 'Tech.', 'Wohnen', 'Abos', 'Mobil', 'Geschenke', 'Aktiv.', 'Urlaub', 'Studium', 'Bank'],
+        // 4. CHART AUSGABEN
+        const aus = filterData(
+            ['Allg.', 'Essen', 'Freizeit', 'Hyg.', 'Spend.', 'Style', 'Tech.', 'Wohnen', 'Abos', 'Mobil', 'Geschenk', 'Aktiv.', 'Urlaub', 'Studium', 'Bank'],
             [d.aus_Allg, d.aus_Essen, d.aus_Freizeit, d.aus_Hygiene, d.aus_Spenden, d.aus_Style, d.aus_Technik, d.aus_Wohnen, d.aus_Abos, d.aus_Mobil, d.aus_Geschenk, d.aus_Aktivismus, d.aus_Urlaub, d.aus_Studium, d.aus_Bank],
             ['#34495e', '#27ae60', '#f1c40f', '#e67e22', '#e74c3c', '#9b59b6', '#1abc9c', '#d35400', '#2980b9', '#8e44ad', '#2c3e50', '#c0392b', '#16a085', '#273c75', '#95a5a6']
         );
@@ -340,20 +343,13 @@
         if (chartAus) chartAus.destroy();
         chartAus = new Chart(document.getElementById('chartAusgaben'), {
             type: 'doughnut',
-            data: {
-                labels: ausData.labels,
-                datasets: [{
-                    data: ausData.values,
-                    backgroundColor: ausData.colors,
-                    borderWidth: 1
-                }]
-            },
-            options: commonOptions
+            data: { labels: aus.labels, datasets: [{ data: aus.values, backgroundColor: aus.colors, borderWidth: 1 }] },
+            options: chartOptions
         });
 
-        // --- CHART EINNAHMEN (Gefiltert + Job separat) ---
-        const einData = filterEmpty(
-            ['Job', 'Allg.', 'Zuhause', 'Staat', 'Trinkgeld', 'Bank', 'Oma/Opa', 'Sonst.'],
+        // 5. CHART EINNAHMEN (Job separat)
+        const ein = filterData(
+            ['Job', 'Allg.', 'Zuhause', 'Staat', 'Tip', 'Bank', 'Oma', 'Sonst.'],
             [d.einJob, d.einAllg, d.einZuhause, d.einStaat, d.einTrinkgeld, d.einBank, d.einOma, d.einSonstige],
             ['#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#f1c40f', '#34495e', '#e67e22', '#bdc3c7']
         );
@@ -361,21 +357,14 @@
         if (chartEin) chartEin.destroy();
         chartEin = new Chart(document.getElementById('chartEinnahmen'), {
             type: 'doughnut',
-            data: {
-                labels: einData.labels,
-                datasets: [{
-                    data: einData.values,
-                    backgroundColor: einData.colors,
-                    borderWidth: 1
-                }]
-            },
-            options: commonOptions
+            data: { labels: ein.labels, datasets: [{ data: ein.values, backgroundColor: ein.colors, borderWidth: 1 }] },
+            options: chartOptions
         });
 
         document.getElementById('status').innerText = "";
     } catch(e) { 
-        document.getElementById('status').innerText = "Ladefehler (Analyse)"; 
-        console.error("Analyse-Fehler:", e);
+        document.getElementById('status').innerText = "Fehler in ladeAnalyse"; 
+        console.error("Analyse-Error:", e);
     }
 }
 
