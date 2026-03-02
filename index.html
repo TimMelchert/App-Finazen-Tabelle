@@ -417,12 +417,16 @@ const tbody = document.getElementById('jahres-tabelle-body');
 if (tbody && d.jahresUebersicht) {
     tbody.innerHTML = ""; // Altes löschen
     
+    const tbody = document.getElementById('jahres-tabelle-body');
+if (tbody && d.jahresUebersicht) {
+    tbody.innerHTML = "";
+    
     d.jahresUebersicht.forEach(m => {
-        // Wir zeigen nur Monate an, die nicht komplett 0 sind
-        if (Math.abs(m.ausgaben) > 0.01 || Math.abs(m.einnahmen) > 0.01) {
+        // Wir prüfen nur noch, ob der Monatsname existiert (nicht leer ist)
+        if (m.monat && m.monat.toString().trim() !== "") {
             const tr = document.createElement('tr');
             
-            // Farb-Logik: Bilanz grün/rot, Einnahmen immer grün
+            // Farb-Logik für die Bilanz
             const bilanzClass = m.bilanz >= 0 ? 'positiv' : 'negativ';
             
             tr.innerHTML = `
@@ -434,13 +438,6 @@ if (tbody && d.jahresUebersicht) {
             tbody.appendChild(tr);
         }
     });
-}
-        
-        document.getElementById('status').innerText = "";
-    } catch(e) { 
-        document.getElementById('status').innerText = "Fehler in der Analyse";
-        console.error(e);
-    }
 }
 
    async function senden(typ) {
