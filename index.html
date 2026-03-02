@@ -374,22 +374,26 @@
     }
 }
 
-    async function senden(typ) {
-        const overlay = document.getElementById('success-overlay');
-        const betragField = document.getElementById('betrag');
-        const zweckField = document.getElementById('zweck');
-        
-        const data = {
-            pin: userPin,
-            reiter: document.getElementById('reiter').value,
-            ziel: document.getElementById('ziel_reiter').value,
-            betrag: parseFloat(betragField.value),
-            zweck: zweckField.value || "Transfer",
-            kategorie: document.getElementById('kategorie').value || "Allgemein",
-            datum: document.getElementById('datum').value,
-            mode: typ
-        };
+   async function senden(typ) {
+    const overlay = document.getElementById('success-overlay');
+    const betragField = document.getElementById('betrag');
+    const zweckField = document.getElementById('zweck');
+    
+    // NEU: Checkbox Status abfragen
+    const isSplit = document.getElementById('split') ? document.getElementById('split').checked : false;
 
+    const data = {
+        pin: userPin,
+        reiter: document.getElementById('reiter').value,
+        ziel: document.getElementById('ziel_reiter').value,
+        betrag: parseFloat(betragField.value),
+        zweck: zweckField.value || "Transfer",
+        kategorie: document.getElementById('kategorie').value || "Allgemein",
+        datum: document.getElementById('datum').value,
+        split: isSplit,
+        mode: typ
+    };
+       
         if (isNaN(data.betrag)) return alert("Bitte Betrag eingeben!");
         document.getElementById('status').innerText = "Speichere...";
 
@@ -399,6 +403,8 @@
             betragField.value = "";
             zweckField.value = "";
             document.getElementById('kategorie').value = "";
+            const splitBox = document.getElementById('split');
+            if (splitBox) splitBox.checked = false;
             setTimeout(() => { 
                 overlay.style.display = 'none'; 
                 if(document.getElementById('tab-eingabe').classList.contains('active')) loadStats();
