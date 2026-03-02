@@ -391,16 +391,24 @@
             options: chartOptions
         });
 
-        // Einnahmen Chart
+        // Einnahmen Chart - KORRIGIERT: d.einJob hinzugefügt
         const ein = filterData(
             ['Job', 'Allg.', 'Zuhause', 'Staat', 'Tip', 'Bank', 'Oma', 'Sonst.'],
-            [d.einJob, d.einAllg, d.einZuhause, d.einStaat, d.einTrinkgeld, d.einBank, d.einOma, d.einSonstige],
+            [d.einJob || 0, d.einAllg || 0, d.einZuhause || 0, d.einStaat || 0, d.einTrinkgeld || 0, d.einBank || 0, d.einOma || 0, d.einSonstige || 0],
             ['#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#f1c40f', '#34495e', '#e67e22', '#bdc3c7']
         );
+        
         if (chartEin) chartEin.destroy();
         chartEin = new Chart(document.getElementById('chartEinnahmen'), {
             type: 'doughnut',
-            data: { labels: ein.labels, datasets: [{ data: ein.values, backgroundColor: ein.colors, borderWidth: 1 }] },
+            data: { 
+                labels: ein.labels, 
+                datasets: [{ 
+                    data: ein.values, 
+                    backgroundColor: ein.colors, 
+                    borderWidth: 1 
+                }] 
+            },
             options: chartOptions
         });
 
