@@ -271,6 +271,9 @@
         }
     }
 
+   let chartAus = null; // Speichert das Ausgaben-Diagramm
+    let chartEin = null; // Speichert das Einnahmen-Diagramm
+
     async function ladeAnalyse() {
         document.getElementById('status').innerText = "Analyse wird berechnet...";
         try {
@@ -281,27 +284,73 @@
             document.getElementById('ana-bilanz').innerText = d.bilanz.toFixed(2) + " €";
             document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "#27ae60" : "#e74c3c";
             
-            // Balken-Ampel-Logik
+            // Budget-Balken
             const prozent = d.budgetMonat > 0 ? Math.min((d.ausgabenGesamt / d.budgetMonat) * 100, 100) : 0;
             const bar = document.getElementById('ana-budget-bar');
             bar.style.width = prozent + "%";
-            
-            if(prozent < 70) bar.style.backgroundColor = "var(--success)";
-            else if(prozent < 100) bar.style.backgroundColor = "var(--warning)";
-            else bar.style.backgroundColor = "var(--danger)";
-
+            bar.style.backgroundColor = prozent < 70 ? "var(--success)" : (prozent < 100 ? "var(--warning)" : "var(--danger)");
             document.getElementById('ana-budget-text').innerText = Math.round(d.ausgabenGesamt) + " / " + d.budgetMonat + " €";
 
+            // Die 6 Netto-Kacheln füllen
             document.getElementById('ana-abos').innerText = d.nettoAbos.toFixed(2);
             document.getElementById('ana-wohnen').innerText = d.nettoWohnen.toFixed(2);
             document.getElementById('ana-mobil').innerText = d.nettoMobil.toFixed(2);
             document.getElementById('ana-bank').innerText = d.nettoBank.toFixed(2);
             document.getElementById('ana-essen').innerText = d.nettoEssen.toFixed(2);
             document.getElementById('ana-allg').innerText = d.nettoAllgemein.toFixed(2);
-            
+
+            // --- DIAGRAMM AUSGABEN (Alle 15 Kategorien) ---
+            if (chartAus) chartAus.destroy();
+            chartAus = new Chart(document.getElementById('chartAusgaben'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Allg.', 'Essen', 'Freizeit', 'Hygiene', 'Spenden', 'Style', 'Technik', 'Wohnen', 'Abos', 'Mobil', 'Geschenke', 'Aktivismus', 'Urlaub', 'Studium', 'Bank'],
+                    datasets: [{
+                        data: [
+                            Math.abs(d.aus_Allg), Math.abs(d.aus_Essen), Math.abs(d.aus_Freizeit),
+                            Math.abs(d.aus_Hygiene), Math.abs(d.aus_Spenden), Math.abs(d.aus_Style),
+                            Math.abs(d.aus_Technik), Math.abs(d.aus_Wohnen), Math.abs(d.aus_Abos),
+                            Math.abs(d.aus_Mobil), Math.abs(d.aus_Geschenk), Math.abs(d.aus_Aktivismus),
+                            Math.abs(d.aus_Urlaub), Math.abs(d.aus_Studium), Math.abs(d.aus_Bank)
+                        ],
+                        backgroundColor: ['#34495e', '#27ae60', '#f1c40f', '#e67e22', '#e74c3c', '#9b59b6', '#1abc9c', '#d35400', '#2980b9', '#8e44ad', '#2c3e50', '#c0392b', '#16a085', '#273c75', '#95a5a6'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (c) => c.label + ': ' + c.raw.toFixed(2) + ' €' } }
+                    }, 
+                    cutout: '65%' 
+                }
+            });
+
+            // --- DIAGRAMM EINNAHMEN ---
+            if (chartEin) chartEin.destroy();
+            chartEin = new Chart(document.getElementById('chartEinnahmen'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Job/Allg', 'Zuhause', 'Staat', 'Trinkgeld', 'Bank', 'Großeltern', 'Sonst.'],
+                    datasets: [{
+                        data: [d.einAllg, d.einZuhause, d.einStaat, d.einTrinkgeld, d.einBank, d.einOma, d.einSonstige],
+                        backgroundColor: ['#2ecc71', '#1abc9c', '#16a085', '#27ae60', '#34495e', '#f1c40f', '#bdc3c7'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (c) => c.label + ': ' + c.raw.toFixed(2) + ' €' } }
+                    }, 
+                    cutout: '65%' 
+                }
+            });
+
             document.getElementById('status').innerText = "";
         } catch(e) { 
             document.getElementById('status').innerText = "Ladefehler (Analyse)"; 
+            console.error(e);
         }
     }
 
