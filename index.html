@@ -342,41 +342,36 @@
                 if (el) el.innerText = kacheln[id].toFixed(2);
             }
 
-            // 3. JAHRESTABELLE ROBUST
+            // JAHRESTABELLE
             const tbody = document.getElementById('jahres-tabelle-body');
-            if (tbody) {
-            tbody.innerHTML = "";
-            if (d.jahresUebersicht && Array.isArray(d.jahresUebersicht)) {
+            if (tbody && d.jahresUebersicht) {
+                tbody.innerHTML = "";
                 d.jahresUebersicht.forEach(m => {
-                    if (m.monat && m.monat !== "Unbekannt") {
+
+                    if (m.monat) {
                         const tr = document.createElement('tr');
-                        const b = parseFloat(m.bilanz) || 0;
-                        const bilanzClass = b >= 0 ? 'positiv' : 'negativ';
-                    
+                        const bilanzClass = m.bilanz >= 0 ? 'positiv' : 'negativ';
+
                         tr.innerHTML = `
                             <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
-                            <td class="td-val">${(parseFloat(m.ausgaben) || 0).toFixed(2)} €</td>
-                            <td class="td-val positiv">${(parseFloat(m.einnahmen) || 0).toFixed(2)} €</td>
-                            <td class="td-val ${bilanzClass}">${b.toFixed(2)} €</td>
+                            <td class="td-val">${m.ausgaben.toFixed(2)} €</td>
+                            <td class="td-val positiv">${m.einnahmen.toFixed(2)} €</td>
+                            <td class="td-val ${bilanzClass}">${m.bilanz.toFixed(2)} €</td>
                         `;
                         tbody.appendChild(tr);
                     }
                 });
             }
+            document.getElementById('status').innerText = "";
+
+        } catch(e) {
+            document.getElementById('status').innerText = "Fehler beim Laden der Analyse";
+            console.error(e);
         }
+    }
 
         // 4. Charts Logik aufrufen
         renderCharts(d);
-
-        // Status-Text leeren wenn alles fertig
-        const statusEl = document.getElementById('status');
-        if (statusEl) statusEl.innerText = "";
-
-    } catch(e) {
-        console.error("Fehler in der Verarbeitung:", e);
-        const statusEl = document.getElementById('status');
-        if (statusEl) statusEl.innerText = "Fehler beim Berechnen der Daten";
-    }
 
     function renderCharts(d) {
         const chartOptions = {
