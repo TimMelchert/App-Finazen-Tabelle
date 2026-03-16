@@ -342,32 +342,41 @@
                 if (el) el.innerText = kacheln[id].toFixed(2);
             }
 
-            // Charts Logik
-            renderCharts(d);
-
-           // JAHRESTABELLE ROBUST
-const tbody = document.getElementById('jahres-tabelle-body');
-if (tbody) {
-    tbody.innerHTML = "";
-    if (d.jahresUebersicht && Array.isArray(d.jahresUebersicht)) {
-        d.jahresUebersicht.forEach(m => {
-            // Nur Zeilen anzeigen, die wirklich Daten oder einen Monatsnamen haben
-            if (m.monat && m.monat !== "Unbekannt") {
-                const tr = document.createElement('tr');
-                const b = parseFloat(m.bilanz) || 0;
-                const bilanzClass = b >= 0 ? 'positiv' : 'negativ';
-                
-                tr.innerHTML = `
-                    <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
-                    <td class="td-val">${(parseFloat(m.ausgaben) || 0).toFixed(2)} €</td>
-                    <td class="td-val positiv">${(parseFloat(m.einnahmen) || 0).toFixed(2)} €</td>
-                    <td class="td-val ${bilanzClass}">${b.toFixed(2)} €</td>
-                `;
-                tbody.appendChild(tr);
+            // 3. JAHRESTABELLE ROBUST
+            const tbody = document.getElementById('jahres-tabelle-body');
+            if (tbody) {
+            tbody.innerHTML = "";
+            if (d.jahresUebersicht && Array.isArray(d.jahresUebersicht)) {
+                d.jahresUebersicht.forEach(m => {
+                    if (m.monat && m.monat !== "Unbekannt") {
+                        const tr = document.createElement('tr');
+                        const b = parseFloat(m.bilanz) || 0;
+                        const bilanzClass = b >= 0 ? 'positiv' : 'negativ';
+                    
+                        tr.innerHTML = `
+                            <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
+                            <td class="td-val">${(parseFloat(m.ausgaben) || 0).toFixed(2)} €</td>
+                            <td class="td-val positiv">${(parseFloat(m.einnahmen) || 0).toFixed(2)} €</td>
+                            <td class="td-val ${bilanzClass}">${b.toFixed(2)} €</td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                });
             }
-        });
+        }
+
+        // 4. Charts Logik aufrufen
+        renderCharts(d);
+
+        // Status-Text leeren wenn alles fertig
+        const statusEl = document.getElementById('status');
+        if (statusEl) statusEl.innerText = "";
+
+    } catch(e) {
+        console.error("Fehler in der Verarbeitung:", e);
+        const statusEl = document.getElementById('status');
+        if (statusEl) statusEl.innerText = "Fehler beim Berechnen der Daten";
     }
-}
 
     function renderCharts(d) {
         const chartOptions = {
