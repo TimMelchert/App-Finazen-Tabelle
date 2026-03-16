@@ -400,9 +400,9 @@
 
         // Einnahmen Chart
         const ein = filterData(
-            ['Job', 'Allg.', 'Zuhause', 'Staat', 'Tip', 'Bank', 'Oma', 'Sonst.'],
-            [d.einJob || 0, d.einAllg || 0, d.einZuhause || 0, d.einStaat || 0, d.einTrinkgeld || 0, d.einBank || 0, d.einOma || 0, d.einSonstige || 0],
-            ['#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#f1c40f', '#34495e', '#e67e22', '#bdc3c7']
+            ['Job', 'Allg.', 'Zuhause', 'Staat', 'Tip', 'Bank', 'Oma', 'Abos', 'Wohnen', 'Mobil'],
+            [d.einJob || 0, d.einAllg || 0, d.einZuhause || 0, d.einStaat || 0, d.einTrinkgeld || 0, d.einBank || 0, d.einOma || 0, d.einAbos || 0, d.einWohnen || 0, d.einMobil || 0],
+            ['#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#f1c40f', '#34495e', '#e67e22', '#2980b9', '#d35400', '#8e44ad']
         );
         if (chartEin) chartEin.destroy();
         chartEin = new Chart(document.getElementById('chartEinnahmen'), {
