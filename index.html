@@ -342,25 +342,32 @@
                 if (el) el.innerText = kacheln[id].toFixed(2);
             }
 
-           // JAHRESTABELLE
-            const tbody = document.getElementById('jahres-tabelle-body');
-            if (tbody && d.jahresUebersicht) {
-                tbody.innerHTML = "";
-                d.jahresUebersicht.forEach(m => {
-                    if (m.monat && m.monat !== "Unbekannt") {
-                        const tr = document.createElement('tr');
-                        const mBilanz = parseFloat(m.bilanz) || 0;
-                        const bilanzClass = mBilanz >= 0 ? 'positiv' : 'negativ';
-                        tr.innerHTML = `
-                            <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
-                            <td class="td-val">${(parseFloat(m.ausgaben) || 0).toFixed(2)} €</td>
-                            <td class="td-val positiv">${(parseFloat(m.einnahmen) || 0).toFixed(2)} €</td>
-                            <td class="td-val ${bilanzClass}">${mBilanz.toFixed(2)} €</td>
-                        `;
-                        tbody.appendChild(tr);
-                    }
-                });
-            }
+           // JAHRESTABELLE (Chirurgisch präzise)
+    	    const tbody = document.getElementById('jahres-tabelle-body');
+            if (tbody && d.jahresUebersicht && Array.isArray(d.jahresUebersicht)) {
+            tbody.innerHTML = "";
+            d.jahresUebersicht.forEach(m => {
+                // Wir prüfen nur, ob ein Monatsname da ist (Spalte B)
+                if (m.monat && m.monat.toString().trim() !== "") {
+                    const tr = document.createElement('tr');
+            
+                    // Werte sicher in Zahlen umwandeln (0 als Fallback für leere Zellen)
+                    const aus = parseFloat(m.ausgaben) || 0;
+                    const ein = parseFloat(m.einnahmen) || 0;
+                    const bil = parseFloat(m.bilanz) || 0;
+            
+                    const bilanzClass = bil >= 0 ? 'positiv' : 'negativ';
+
+                    tr.innerHTML = `
+                        <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
+                        <td class="td-val">${aus.toFixed(2)} €</td>
+                        <td class="td-val positiv">${ein.toFixed(2)} €</td>
+                        <td class="td-val ${bilanzClass}">${bil.toFixed(2)} €</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+        }
 
             // HIER WICHTIG: Aufruf der Charts AM ENDE des Try-Blocks
             renderCharts(d);
