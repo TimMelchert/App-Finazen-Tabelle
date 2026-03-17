@@ -218,6 +218,7 @@
             <button onclick="senden('umbuchung')" class="btn-umb">Umbuchung bestätigen</button>
         </div> </div> <div id="tab-analyse" class="tab-content">
     <div class="gesamt-container">
+        <small style="font-weight:bold; color:#7f8c8d; text-transform: uppercase; letter-spacing: 1px;">Monatsbilanz</small>
         <span id="ana-bilanz" class="gesamt-wert">0.00 €</span>
         <small id="anzeige-monat">Monat laden...</small>
     </div>
@@ -322,14 +323,16 @@
             document.getElementById('ana-bilanz').innerText = d.bilanz.toFixed(2) + " €";
             document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "var(--success)" : "var(--danger)";
             
-            // Budget-Balken
-            const prozent = d.budgetMonat > 0 ? Math.min((d.ausgabenGesamt / d.budgetMonat) * 100, 100) : 0;
+            // Suche diese Stelle in deinem HTML (JavaScript-Teil)
+            const nettoGesamt = parseFloat(d.nettoGesamt) || 0; // Greift auf 'nMonatsNetto' aus dem Script zu
+            const prozent = d.budgetMonat > 0 ? Math.min((nettoGesamt / d.budgetMonat) * 100, 100) : 0;
+
             const bar = document.getElementById('ana-budget-bar');
             if (bar) {
-                bar.style.width = prozent + "%";
+                bar.style.width = Math.max(0, prozent) + "%";
                 bar.style.backgroundColor = prozent < 80 ? "var(--success)" : "var(--danger)";
             }
-            document.getElementById('ana-budget-text').innerText = Math.round(d.ausgabenGesamt) + " / " + d.budgetMonat + " €";
+            document.getElementById('ana-budget-text').innerText = Math.round(nettoGesamt) + " / " + d.budgetMonat + " €";
 
             // Netto-Kacheln
             const kacheln = {
