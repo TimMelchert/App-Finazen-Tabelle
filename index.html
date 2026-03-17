@@ -367,11 +367,11 @@
         } catch(e) {
             document.getElementById('status').innerText = "Fehler beim Laden der Analyse";
             console.error(e);
-        }
-    }
 
         // 4. Charts Logik aufrufen
         renderCharts(d);
+        }
+    }
 
     function renderCharts(d) {
         const chartOptions = {
