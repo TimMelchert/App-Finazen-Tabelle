@@ -356,12 +356,20 @@
                     const ein = parseFloat(m.einnahmen) || 0;
                     const bil = parseFloat(m.bilanz) || 0;
             
-                    const bilanzClass = bil >= 0 ? 'positiv' : 'negativ';
+                    let bilanzClass = ''; 
+                    if (bil >= 1) {
+                        bilanzClass = 'positiv';
+                    } else if (bil <= -1) {
+                        bilanzClass = 'negativ';
+                    }
 
+                    // Einnahmen-Spalte ebenfalls neutral halten, wenn 0
+                    const einnahmenClass = ein >= 1 ? 'positiv' : '';
+                    
                     tr.innerHTML = `
                         <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
                         <td class="td-val">${aus.toFixed(2)} €</td>
-                        <td class="td-val positiv">${ein.toFixed(2)} €</td>
+                        <td class="td-val ${einnahmenClass}">${ein.toFixed(2)} €</td>
                         <td class="td-val ${bilanzClass}">${bil.toFixed(2)} €</td>
                     `;
                     tbody.appendChild(tr);
