@@ -263,6 +263,21 @@
     </thead>
     <tbody id="jahres-tabelle-body"></tbody>
 </table>
+
+<div class="bafoeg-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;">
+    <div class="kachel">
+        <small>Bafög Gesamt erhalten</small>
+        <h3 id="b-zahlung">0.00 €</h3>
+    </div>
+    <div class="kachel">
+        <small>Darlehensanteil</small>
+        <h3 id="b-darlehen">0.00 €</h3>
+    </div>
+    <div class="kachel">
+        <small>Rückzahlungsbetrag</small>
+        <h3 id="b-rueck">0.00 €</h3>
+    </div>
+</div>
             
     <button onclick="ladeAnalyse()" style="background:none; color:#bbb; width:100%; border:none; font-size:11px; margin-top:30px; cursor:pointer;">DATEN AKTUALISIEREN</button>
 </div>
@@ -376,6 +391,12 @@
                         <td class="td-val ${bilanzClass}">${bil.toFixed(2)} €</td>
                     `;
                     tbody.appendChild(tr);
+
+
+            // In der Funktion, die die Daten vom Script empfängt:
+            document.getElementById('b-zahlung').innerText = d.bafoeg.zahlung.toLocaleString() + " €";
+            document.getElementById('b-darlehen').innerText = d.bafoeg.darlehen.toLocaleString() + " €";
+            document.getElementById('b-rueck').innerText = d.bafoeg.rueckzahlung.toLocaleString() + " €";
                 }
             });
         }
