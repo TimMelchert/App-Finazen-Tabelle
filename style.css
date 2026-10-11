@@ -73,14 +73,39 @@ body { font-family: sans-serif; background: var(--bg); padding: 15px; margin: 0;
 .bar-text { display: flex; justify-content: space-between; font-size: 0.85em; font-weight: bold; }
 
 /* ---------- Analyse ---------- */
+.monat-wahl-zeile select { margin-bottom: 12px; font-weight: bold; color: var(--primary); background: #fafafa; }
+
 .netto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .netto-stat { background: #fdfdfd; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #f0f0f0; }
 .netto-stat b { display: block; font-size: 0.65em; color: #999; text-transform: uppercase; margin-bottom: 4px; }
 .netto-stat span { font-weight: bold; font-size: 1.1em; color: #333; }
+.netto-stat.erledigt { border-color: var(--success); }
+.netto-stat.erledigt > span { color: var(--success); }
+
+/* Haken in den Kacheln Abos und Wohnen */
+.netto-stat .haken-liste {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
+    margin-top: 12px; padding: 10px 4px 0 6px; border-top: 1px dashed #e5e5e5; text-align: left;
+}
+.netto-stat .haken-liste:empty { display: none; }
+.haken-zeile { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 12px; color: #888; }
+.netto-stat .haken-liste span { font-size: inherit; font-weight: normal; color: inherit; }
+.haken-box { width: 16px; height: 16px; flex: none; border: 2px solid #ccc; border-radius: 4px; box-sizing: border-box; position: relative; }
+.haken-name { flex: 1; }
+.netto-stat .haken-liste .haken-betrag { font-size: 11px; }
+.haken-zeile.ok { color: var(--success); }
+.haken-zeile.ok .haken-box { background: var(--success); border-color: var(--success); }
+.haken-zeile.ok .haken-box::after {
+    content: ''; position: absolute; left: 3px; top: 0; width: 4px; height: 8px;
+    border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
 
 .chart-zeile { display: flex; justify-content: space-around; gap: 10px; margin-bottom: 25px; }
 .chart-box { width: 48%; height: 200px; position: relative; text-align: center; }
 .chart-box small { font-weight: bold; color: #7f8c8d; display: block; margin-bottom: 5px; font-size: 10px; }
+
+.balken-box { position: relative; height: 220px; }
+.balken-hinweis { display: block; text-align: center; font-size: 10px; color: #999; margin-top: 4px; }
 
 .uebersicht-table {
     width: 100%;
@@ -95,6 +120,8 @@ body { font-family: sans-serif; background: var(--bg); padding: 15px; margin: 0;
 .uebersicht-table th { background: #f8f9fa; color: #7f8c8d; padding: 10px; text-align: left; font-size: 0.7em; text-transform: uppercase; }
 .uebersicht-table td { padding: 10px; border-top: 1px solid #f0f0f0; }
 .uebersicht-table tr:last-child td { border-bottom: none; }
+.uebersicht-table tr.klickbar { cursor: pointer; }
+.uebersicht-table tr.gewaehlt td { background: #eef7f1; }
 .td-val { text-align: right; font-weight: bold; }
 .td-monat { font-weight: bold; color: #34495e; }
 .positiv { color: #27ae60 !important; }
