@@ -3,11 +3,12 @@
    Aufbau:
    1. Einstellungen & Listen
    2. Verbindung zum Script (Passwort)
-   3. Kleine Helfer (Datum, Dropdown)
+   3. Kleine Helfer (Datum, Dropdown, Zweck-Verknüpfung)
    4. Kontostände
-   5. Analyse & Diagramme
-   6. Buchen
-   7. Start
+   5. Analyse (Monatsauswahl, Kacheln, Haken)
+   6. Diagramme
+   7. Buchen
+   8. Start
    ===================================================== */
 
 
@@ -15,18 +16,62 @@
 
 const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGDkieud8N_cGO7xeoTvDxwn7_fPTHSD6THuxaeInnfLTdf75arw/exec";
 
-// Hier kannst du Einträge ergänzen oder löschen.
-// Die alphabetische Sortierung passiert automatisch.
-const ZWECKE = [
-    "Gehalt Job Neustadt", "Greenpeace", "Internet WG", "Internet WG Janika", "Internet WG Jekabs",
-    "Internet WG Sarah", "Internet WG Vanessa", "Internet WG Vincent", "Kindergeld",
-    "Miete", "Netflix", "Netflix Miri", "Netflix Zuhause", "Rewe", "Spotify", "Spotify Zuhause"
-];
+// ZWECKE: Beim Auswählen eines Zwecks werden Kategorie und (falls eingetragen) Betrag automatisch gesetzt.
+// Betrag eintragen z. B.  betrag: 13.99   (Punkt statt Komma!)   –   leer lassen:  betrag: null
+// Neue Zwecke einfach als neue Zeile ergänzen, die Sortierung passiert automatisch.
+const ZWECK_INFO = {
+    "Gehalt Job Neustadt": { kategorie: "Job",     betrag: null },
+    "Greenpeace":          { kategorie: "Spenden", betrag: null },
+    "Internet WG":         { kategorie: "Wohnen",  betrag: null },
+    "Internet WG Janika":  { kategorie: "Wohnen",  betrag: null },
+    "Internet WG Jekabs":  { kategorie: "Wohnen",  betrag: null },
+    "Internet WG Sarah":   { kategorie: "Wohnen",  betrag: null },
+    "Internet WG Vanessa": { kategorie: "Wohnen",  betrag: null },
+    "Internet WG Vincent": { kategorie: "Wohnen",  betrag: null },
+    "Kindergeld":          { kategorie: "Staat",   betrag: null },
+    "Miete":               { kategorie: "Wohnen",  betrag: null },
+    "Netflix":             { kategorie: "Abos",    betrag: null },
+    "Netflix Jonathan":    { kategorie: "Abos",    betrag: null },
+    "Netflix Miri":        { kategorie: "Abos",    betrag: null },
+    "Netflix Zuhause":     { kategorie: "Abos",    betrag: null },
+    "Rewe":                { kategorie: "Essen",   betrag: null },
+    "Spotify":             { kategorie: "Abos",    betrag: null },
+    "Spotify Zuhause":     { kategorie: "Abos",    betrag: null }
+};
+const ZWECKE = Object.keys(ZWECK_INFO);
+
 const KATEGORIEN = [
     "Allgemein", "Abos", "Aktivismus", "Bank", "Essen", "Fortbewegung", "Freizeit", "Geschenk",
     "Großeltern", "Hygiene", "Job", "Spenden", "Staat", "Studium", "Style",
     "Technik", "Urlaub", "Wohnen", "Zuhause"
 ];
+
+// RÜCKZAHLUNGEN: Wer zahlt dir etwas zurück? Ein Haken erscheint, sobald im gewählten Monat im Blatt "Konto"
+// eine Einnahme mit genau diesem Zweck und der Kategorie (Abos bzw. Wohnen) steht.
+// eigenerAnteil = dein fester Anteil in € (wird vom Rest abgezogen).
+const RUECKZAHLUNG = {
+    Abos: {
+        eigenerAnteil: 0,
+        personen: [
+            { name: "Miri",       zweck: "Netflix Miri" },
+            { name: "Jonathan",   zweck: "Netflix Jonathan" },
+            { name: "N. Zuhause", zweck: "Netflix Zuhause" },
+            { name: "S. Zuhause", zweck: "Spotify Zuhause" }
+        ]
+    },
+    Wohnen: {
+        eigenerAnteil: 0,
+        personen: [
+            { name: "Sarah",   zweck: "Internet WG Sarah" },
+            { name: "Jekabs",  zweck: "Internet WG Jekabs" },
+            { name: "Vanessa", zweck: "Internet WG Vanessa" },
+            { name: "Vincent", zweck: "Internet WG Vincent" },
+            { name: "Janika",  zweck: "Internet WG Janika" }
+        ]
+    }
+};
+
+const MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
 // Bezeichnungen und Farben der Diagramme (Reihenfolge = Reihenfolge der Daten)
 const AUS_LABELS = ['Allg.', 'Essen', 'Freizeit', 'Hyg.', 'Spend.', 'Style', 'Tech.', 'Wohnen', 'Abos', 'Mobil', 'Geschenk', 'Aktiv.', 'Urlaub', 'Studium', 'Bank'];
@@ -69,6 +114,15 @@ function setStatus(text) {
 
 /* ---------- 3. KLEINE HELFER ---------- */
 
+const norm = (s) => String(s == null ? '' : s).trim().toLowerCase();
+
+// Nummer des Monats (1-12) aus dem Namen, 0 wenn unbekannt
+function monatNr(name) {
+    const n = norm(name).slice(0, 3);
+    if (!n) return 0;
+    return MONATE.findIndex(m => m.toLowerCase().slice(0, 3) === n) + 1;
+}
+
 // Heutiges Datum in deiner Ortszeit (nicht UTC), daher auch nachts korrekt
 function heute() {
     const d = new Date();
@@ -76,8 +130,8 @@ function heute() {
 }
 let datumManuell = false; // wird true, sobald du das Datum selbst änderst
 
-// Dropdown mit Freitext (Zweck & Kategorie)
-function initCombo(wrapId, items) {
+// Dropdown mit Freitext (Zweck & Kategorie). onWahl wird aufgerufen, wenn ein Eintrag gewählt wurde.
+function initCombo(wrapId, items, onWahl) {
     const wrap = document.getElementById(wrapId);
     const input = wrap.querySelector('input');
     const btn = wrap.querySelector('.combo-btn');
@@ -95,7 +149,11 @@ function initCombo(wrapId, items) {
             const div = document.createElement('div');
             div.className = 'combo-item';
             div.textContent = i;
-            div.addEventListener('click', () => { input.value = i; close(); });
+            div.addEventListener('click', () => {
+                input.value = i;
+                close();
+                if (onWahl) onWahl(i);
+            });
             list.appendChild(div);
         });
         if (treffer.length > 0) list.classList.add('open'); else close();
@@ -112,6 +170,19 @@ function initCombo(wrapId, items) {
     }
     btn.addEventListener('click', () => { list.classList.contains('open') ? close() : open(''); });
     document.addEventListener('click', (ev) => { if (!wrap.contains(ev.target)) close(); });
+}
+
+// Zweck gewählt: Kategorie und Betrag automatisch eintragen.
+// ueberschreiben = true (Auswahl aus der Liste): vorhandene Werte werden ersetzt.
+// ueberschreiben = false (Tippen): nur leere Felder werden gefüllt.
+function zweckAnwenden(zweck, ueberschreiben) {
+    const key = ZWECKE.find(z => norm(z) === norm(zweck));
+    if (!key) return;
+    const info = ZWECK_INFO[key];
+    const katEl = document.getElementById('kategorie');
+    const betEl = document.getElementById('betrag');
+    if (info.kategorie && (ueberschreiben || katEl.value.trim() === "")) katEl.value = info.kategorie;
+    if (info.betrag != null && (ueberschreiben || betEl.value === "")) betEl.value = info.betrag;
 }
 
 function switchTab(tab) {
@@ -160,12 +231,14 @@ async function loadStats(mitAnalyseVorladen = false) {
 }
 
 
-/* ---------- 5. ANALYSE & DIAGRAMME ---------- */
+/* ---------- 5. ANALYSE ---------- */
 
 let chartAus = null;
 let chartEin = null;
+let chartBalken = null;
 let analyseDaten = null;
 let analyseZeit = 0;
+let analyseWahl = null;   // gewählter Monat, z. B. "M|2026|Oktober" oder "J|2026" (Ganzes Jahr)
 
 async function holeAnalyse() {
     const d = await api('analyse');
@@ -177,11 +250,67 @@ async function holeAnalyse() {
 async function ladeAnalyse() {
     setStatus("Analyse wird berechnet...");
     try {
-        zeigeAnalyse(await holeAnalyse());
+        const d = await holeAnalyse();
+        if (document.getElementById('tab-analyse').classList.contains('active')) zeigeAnalyse(d);
+        else setStatus("");
     } catch (e) {
         setStatus("Fehler: " + e.message);
         console.error("Analyse Fehler:", e);
     }
+}
+
+function auswahlKey(m) { return "M|" + m.jahr + "|" + m.monat; }
+
+// Die Werte für die aktuelle Auswahl: ein Monat oder die Summe eines Jahres
+function werteFuerAuswahl(d, wahl) {
+    const monate = d.monate || [];
+
+    if (wahl && wahl.startsWith("J|")) {
+        const jahr = Number(wahl.slice(2));
+        const liste = monate.filter(m => m.jahr === jahr);
+        if (liste.length) {
+            const summe = { jahr: jahr, monat: "Ganzes Jahr", istJahr: true };
+            liste.forEach(m => {
+                Object.keys(m).forEach(k => {
+                    if (typeof m[k] === 'number' && k !== 'jahr') summe[k] = (summe[k] || 0) + m[k];
+                });
+            });
+            return summe;
+        }
+    }
+    return monate.find(m => auswahlKey(m) === wahl) || d;  // sonst: aktueller Monat
+}
+
+// Baut die Auswahlliste (Jahr → Monate) und wählt standardmäßig den aktuellen Monat
+function baueAuswahl(d) {
+    const sel = document.getElementById('monat-wahl');
+    const aktJahr = Number(d.jahr) || 0;
+    const istAktuell = (m) => Number(m.jahr) === aktJahr && norm(m.monat) === norm(d.monat);
+    const sichtbar = (d.monate || []).filter(m => istAktuell(m) || Math.abs(m.ausgabenGesamt) + Math.abs(m.einnahmenGesamt) > 0.005);
+    const jahre = [...new Set(sichtbar.map(m => m.jahr))].sort((a, b) => b - a);
+
+    sel.innerHTML = '';
+    jahre.forEach(j => {
+        const gruppe = document.createElement('optgroup');
+        gruppe.label = String(j);
+        gruppe.appendChild(new Option('Ganzes Jahr ' + j, 'J|' + j));
+        sichtbar.filter(m => m.jahr === j)
+            .sort((a, b) => monatNr(b.monat) - monatNr(a.monat))
+            .forEach(m => {
+                gruppe.appendChild(new Option(m.monat + ' ' + j + (istAktuell(m) ? ' (aktuell)' : ''), auswahlKey(m)));
+            });
+        sel.appendChild(gruppe);
+    });
+
+    const keys = Array.from(sel.options).map(o => o.value);
+    const aktuellKey = (d.monate || []).filter(istAktuell).map(auswahlKey)[0];
+    if (!keys.includes(analyseWahl)) analyseWahl = aktuellKey || keys[0] || null;
+    if (analyseWahl) sel.value = analyseWahl;
+}
+
+function zeigeAnalyse(d) {
+    baueAuswahl(d);
+    renderAnalyse(d);
 }
 
 function tabellenZelle(tr, text, klasse) {
@@ -191,33 +320,89 @@ function tabellenZelle(tr, text, klasse) {
     tr.appendChild(td);
 }
 
-function zeigeAnalyse(d) {
+// Rechnet für Abos/Wohnen den Rest aus und wer schon gezahlt hat.
+// Rest = Netto minus dein fester Anteil (0, wenn alle gezahlt haben).
+function berechneHaken(kat, netto, jahr, monat, rueckzahlungen) {
+    const cfg = RUECKZAHLUNG[kat];
+    const monatsDaten = (rueckzahlungen || {})[jahr + "-" + monatNr(monat)] || {};
+    const personen = cfg.personen.map(p => {
+        const betrag = monatsDaten[norm(p.zweck) + "|" + norm(kat)] || 0;
+        return { name: p.name, betrag: betrag, bezahlt: betrag > 0 };
+    });
+    const eigen = Number(cfg.eigenerAnteil) || 0;
+    const betragNetto = Math.abs(netto);
+    let rest = Math.round(Math.max(0, betragNetto - eigen) * 100) / 100;
+    if (netto < 0) rest = -rest;
+    return { rest: rest || 0, personen: personen, eigen: eigen, alleBezahlt: personen.every(p => p.bezahlt) };
+}
+
+function haekchenZeile(liste, name, ok, betrag) {
+    const zeile = document.createElement('div');
+    zeile.className = 'haken-zeile' + (ok ? ' ok' : '');
+    const box = document.createElement('span');
+    box.className = 'haken-box';
+    const n = document.createElement('span');
+    n.className = 'haken-name';
+    n.textContent = name;
+    zeile.appendChild(box);
+    zeile.appendChild(n);
+    if (betrag != null) {
+        const b = document.createElement('span');
+        b.className = 'haken-betrag';
+        b.textContent = Number(betrag).toFixed(2);
+        zeile.appendChild(b);
+    }
+    liste.appendChild(zeile);
+}
+
+// Kachel Abos bzw. Wohnen mit Haken
+function zeigeKachel(kat, w, d) {
+    const abos = kat === 'Abos';
+    const netto = Number(abos ? w.nettoAbos : w.nettoWohnen) || 0;
+    const wertEl = document.getElementById(abos ? 'ana-abos' : 'ana-wohnen');
+    const liste = document.getElementById(abos ? 'haken-abos' : 'haken-wohnen');
+    const kachel = wertEl.closest('.netto-stat');
+
+    liste.innerHTML = '';
+    kachel.classList.remove('erledigt');
+
+    if (w.istJahr) {                       // Ganzes Jahr: nur die Summe, keine Haken
+        wertEl.innerText = netto.toFixed(2);
+        return;
+    }
+    const h = berechneHaken(kat, netto, Number(w.jahr), w.monat, d.rueckzahlungen);
+    wertEl.innerText = h.rest.toFixed(2);
+    h.personen.forEach(p => haekchenZeile(liste, p.name, p.bezahlt, p.bezahlt ? p.betrag : null));
+    if (h.eigen > 0) haekchenZeile(liste, 'Ich', true, h.eigen);
+    if (h.rest === 0 && h.alleBezahlt) kachel.classList.add('erledigt');
+}
+
+function renderAnalyse(d) {
+    const w = werteFuerAuswahl(d, analyseWahl);
     const f2 = (v) => Number(v || 0).toFixed(2);
 
     // Kopf: Monatsbilanz
-    document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
-    document.getElementById('ana-bilanz').innerText = f2(d.bilanz) + " €";
-    document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "var(--success)" : "var(--danger)";
+    document.getElementById('anzeige-monat').innerText = w.istJahr ? ("Ganzes Jahr " + w.jahr) : (w.monat + " " + w.jahr);
+    document.getElementById('ana-bilanz').innerText = f2(w.bilanz) + " €";
+    document.getElementById('ana-bilanz').style.color = w.bilanz >= 0 ? "var(--success)" : "var(--danger)";
 
     // Budget-Balken
-    const nettoGesamt = parseFloat(d.nettoGesamt) || 0;
-    const prozent = d.budgetMonat > 0 ? Math.min((nettoGesamt / d.budgetMonat) * 100, 100) : 0;
+    const nettoGesamt = parseFloat(w.nettoGesamt) || 0;
+    const budget = Number(w.budgetMonat) || 0;
+    const prozent = budget > 0 ? Math.min((nettoGesamt / budget) * 100, 100) : 0;
     const bar = document.getElementById('ana-budget-bar');
     bar.style.width = Math.max(0, prozent) + "%";
     bar.style.backgroundColor = prozent < 80 ? "var(--success)" : "var(--danger)";
-    document.getElementById('ana-budget-text').innerText = Math.round(nettoGesamt) + " / " + d.budgetMonat + " €";
+    document.getElementById('ana-budget-label').innerText = w.istJahr ? "Budget (Summe Jahr)" : "Monatsbudget";
+    document.getElementById('ana-budget-text').innerText = Math.round(nettoGesamt) + " / " + Math.round(budget) + " €";
 
-    // Netto-Kacheln
-    const kacheln = {
-        'ana-abos': d.nettoAbos, 'ana-wohnen': d.nettoWohnen,
-        'ana-mobil': d.nettoMobil, 'ana-bank': d.nettoBank,
-        'ana-essen': d.nettoEssen, 'ana-allg': d.nettoAllgemein
-    };
-    for (const id in kacheln) {
-        document.getElementById(id).innerText = f2(kacheln[id]);
-    }
+    // Kacheln
+    zeigeKachel('Abos', w, d);
+    zeigeKachel('Wohnen', w, d);
+    const kacheln = { 'ana-mobil': w.nettoMobil, 'ana-bank': w.nettoBank, 'ana-essen': w.nettoEssen, 'ana-allg': w.nettoAllgemein };
+    for (const id in kacheln) document.getElementById(id).innerText = f2(kacheln[id]);
 
-    // Jahrestabelle
+    // Jahrestabelle (Tipp auf einen Monat wählt ihn aus)
     const tbody = document.getElementById('jahres-tabelle-body');
     tbody.innerHTML = "";
     (d.jahresUebersicht || []).forEach(m => {
@@ -228,23 +413,35 @@ function zeigeAnalyse(d) {
         const bil = parseFloat(m.bilanz) || 0;
         const bilanzKlasse = bil >= 1 ? 'positiv' : (bil <= -1 ? 'negativ' : '');
         const einKlasse = ein >= 1 ? 'positiv' : '';
+        const key = auswahlKey({ jahr: d.tabellenJahr, monat: m.monat });
 
         const tr = document.createElement('tr');
         tabellenZelle(tr, m.monat, 'td-monat');
         tabellenZelle(tr, aus.toFixed(2) + " €", 'td-val');
         tabellenZelle(tr, ein.toFixed(2) + " €", 'td-val ' + einKlasse);
         tabellenZelle(tr, bil.toFixed(2) + " €", 'td-val ' + bilanzKlasse);
+
+        const sel = document.getElementById('monat-wahl');
+        if (Array.from(sel.options).some(o => o.value === key)) {
+            tr.classList.add('klickbar');
+            if (key === analyseWahl) tr.classList.add('gewaehlt');
+            tr.addEventListener('click', () => {
+                analyseWahl = key;
+                sel.value = key;
+                renderAnalyse(d);
+            });
+        }
         tbody.appendChild(tr);
     });
 
-    // Bafög
+    // Bafög (unabhängig von der Monatsauswahl)
     if (d.bafoeg) {
         document.getElementById('b-zahlung').innerText = Number(d.bafoeg.zahlung || 0).toLocaleString() + " €";
         document.getElementById('b-darlehen').innerText = Number(d.bafoeg.darlehen || 0).toLocaleString() + " €";
         document.getElementById('b-rueck').innerText = Number(d.bafoeg.rueckzahlung || 0).toLocaleString() + " €";
     }
 
-    renderCharts(d);
+    renderCharts(w);
 
     // Hinweis, falls im Sheet Spaltennamen fehlen oder umbenannt wurden
     setStatus(
@@ -253,6 +450,9 @@ function zeigeAnalyse(d) {
             : ""
     );
 }
+
+
+/* ---------- 6. DIAGRAMME ---------- */
 
 // Lässt Werte nahe 0 weg und macht aus allen Beträgen positive Zahlen
 function filterData(labels, values, colors) {
@@ -276,21 +476,58 @@ function donut(canvasId, alt, daten) {
     });
 }
 
-function renderCharts(d) {
+// Säulen pro Ausgaben-Kategorie (Abos, Wohnen, Allgemein, Fortbewegung, Bank, Essen netto, der Rest brutto)
+// mit waagerechter Linie auf Höhe des Budgets
+function balken(alt, daten, budget) {
+    if (alt) alt.destroy();
+    const mitBudget = budget > 0;
+    const datasets = [{
+        type: 'bar', label: 'Ausgaben', data: daten.values, backgroundColor: daten.colors, borderWidth: 0
+    }];
+    if (mitBudget) {
+        datasets.push({
+            type: 'line', label: 'Budget', data: daten.labels.map(() => budget),
+            borderColor: '#e74c3c', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, fill: false
+        });
+    }
+    return new Chart(document.getElementById('chartBalken'), {
+        data: { labels: daten.labels, datasets: datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { font: { size: 9 }, maxRotation: 60 }, grid: { display: false } },
+                y: { beginAtZero: true, ticks: { font: { size: 9 } } }
+            }
+        }
+    });
+}
+
+function renderCharts(w) {
     chartAus = donut('chartAusgaben', chartAus, filterData(
         AUS_LABELS,
-        [d.aus_Allg, d.aus_Essen, d.aus_Freizeit, d.aus_Hygiene, d.aus_Spenden, d.aus_Style, d.aus_Technik, d.aus_Wohnen, d.aus_Abos, d.aus_Mobil, d.aus_Geschenk, d.aus_Aktivismus, d.aus_Urlaub, d.aus_Studium, d.aus_Bank],
+        [w.aus_Allg, w.aus_Essen, w.aus_Freizeit, w.aus_Hygiene, w.aus_Spenden, w.aus_Style, w.aus_Technik, w.aus_Wohnen, w.aus_Abos, w.aus_Mobil, w.aus_Geschenk, w.aus_Aktivismus, w.aus_Urlaub, w.aus_Studium, w.aus_Bank],
         AUS_FARBEN
     ));
     chartEin = donut('chartEinnahmen', chartEin, filterData(
         EIN_LABELS,
-        [d.einJob, d.einAllg, d.einZuhause, d.einStaat, d.einTrinkgeld, d.einBank, d.einOma, d.einAbos, d.einWohnen, d.einMobil].map(v => v || 0),
+        [w.einJob, w.einAllg, w.einZuhause, w.einStaat, w.einTrinkgeld, w.einBank, w.einOma, w.einAbos, w.einWohnen, w.einMobil].map(v => v || 0),
         EIN_FARBEN
     ));
+
+    const budget = Number(w.budgetMonat) || 0;
+    chartBalken = balken(chartBalken, filterData(
+        AUS_LABELS,
+        [w.nettoAllgemein, w.nettoEssen, w.aus_Freizeit, w.aus_Hygiene, w.aus_Spenden, w.aus_Style, w.aus_Technik, w.nettoWohnen, w.nettoAbos, w.nettoMobil, w.aus_Geschenk, w.aus_Aktivismus, w.aus_Urlaub, w.aus_Studium, w.nettoBank].map(v => v || 0),
+        AUS_FARBEN
+    ), budget);
+    document.getElementById('balken-hinweis').innerText = budget > 0
+        ? "Gestrichelte Linie = Budget (" + Math.round(budget) + " €)"
+        : "Kein Budget eingetragen (Spalte Budget-Monat)";
 }
 
 
-/* ---------- 6. BUCHEN ---------- */
+/* ---------- 7. BUCHEN ---------- */
 
 let sendet = false; // verhindert Doppelbuchungen durch mehrfaches Tippen
 
@@ -350,7 +587,7 @@ async function senden(typ) {
 }
 
 
-/* ---------- 7. START ---------- */
+/* ---------- 8. START ---------- */
 
 window.onload = () => {
     const datumEl = document.getElementById('datum');
@@ -362,8 +599,16 @@ window.onload = () => {
         if (!document.hidden && !datumManuell) datumEl.value = heute();
     });
 
-    initCombo('combo-zweck', ZWECKE);
+    initCombo('combo-zweck', ZWECKE, (z) => zweckAnwenden(z, true));
     initCombo('combo-kategorie', KATEGORIEN);
+    // Zweck von Hand eingetippt: leere Felder (Kategorie, Betrag) trotzdem füllen
+    document.getElementById('zweck').addEventListener('change', (ev) => zweckAnwenden(ev.target.value, false));
+
+    // Monatsauswahl im Analyse-Tab
+    document.getElementById('monat-wahl').addEventListener('change', (ev) => {
+        analyseWahl = ev.target.value;
+        if (analyseDaten) renderAnalyse(analyseDaten);
+    });
 
     // Zuletzt bekannte Stände sofort zeigen, solange die frischen laden
     try {
