@@ -73,7 +73,15 @@ body { font-family: sans-serif; background: var(--bg); padding: 15px; margin: 0;
 .bar-text { display: flex; justify-content: space-between; font-size: 0.85em; font-weight: bold; }
 
 /* ---------- Analyse ---------- */
-.monat-wahl-zeile select { margin-bottom: 12px; font-weight: bold; color: var(--primary); background: #fafafa; }
+/* Kleine Auswahlfelder (Monat unter der Bilanz, Jahr über der Tabelle) */
+.monat-wahl-zeile { margin-top: 6px; }
+.monat-wahl-zeile select, .tabelle-kopf select {
+    width: auto; max-width: 100%; margin: 0; padding: 4px 8px;
+    font-size: 16px; font-weight: bold; color: var(--primary);
+    background: #fafafa; border: 1px solid #e3e3e3; border-radius: 8px;
+}
+.tabelle-kopf { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+.tabelle-kopf small { font-weight: bold; color: #7f8c8d; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
 
 .netto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .netto-stat { background: #fdfdfd; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #f0f0f0; }
@@ -82,22 +90,22 @@ body { font-family: sans-serif; background: var(--bg); padding: 15px; margin: 0;
 .netto-stat.erledigt { border-color: var(--success); }
 .netto-stat.erledigt > span { color: var(--success); }
 
-/* Haken in den Kacheln Abos und Wohnen */
+/* Haken in den Kacheln Abos und Wohnen (klein, damit die Kacheln kompakt bleiben) */
 .netto-stat .haken-liste {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
-    margin-top: 12px; padding: 10px 4px 0 6px; border-top: 1px dashed #e5e5e5; text-align: left;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+    margin-top: 8px; padding: 6px 2px 0 4px; border-top: 1px dashed #e5e5e5; text-align: left;
 }
 .netto-stat .haken-liste:empty { display: none; }
-.haken-zeile { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 12px; color: #888; }
+.haken-zeile { display: flex; align-items: center; gap: 6px; width: 100%; font-size: 11px; line-height: 1.2; color: #888; }
 .netto-stat .haken-liste span { font-size: inherit; font-weight: normal; color: inherit; }
-.haken-box { width: 16px; height: 16px; flex: none; border: 2px solid #ccc; border-radius: 4px; box-sizing: border-box; position: relative; }
+.haken-box { width: 12px; height: 12px; flex: none; border: 1.5px solid #ccc; border-radius: 3px; box-sizing: border-box; position: relative; }
 .haken-name { flex: 1; }
-.netto-stat .haken-liste .haken-betrag { font-size: 11px; }
+.netto-stat .haken-liste .haken-betrag { font-size: 10px; }
 .haken-zeile.ok { color: var(--success); }
 .haken-zeile.ok .haken-box { background: var(--success); border-color: var(--success); }
 .haken-zeile.ok .haken-box::after {
-    content: ''; position: absolute; left: 3px; top: 0; width: 4px; height: 8px;
-    border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg);
+    content: ''; position: absolute; left: 2.5px; top: -0.5px; width: 3px; height: 6px;
+    border: solid white; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
 }
 
 .chart-zeile { display: flex; justify-content: space-around; gap: 10px; margin-bottom: 25px; }
@@ -109,7 +117,7 @@ body { font-family: sans-serif; background: var(--bg); padding: 15px; margin: 0;
 
 .uebersicht-table {
     width: 100%;
-    margin-top: 20px;
+    margin-top: 8px;
     border-collapse: collapse;
     font-size: 0.85em;
     background: white;
