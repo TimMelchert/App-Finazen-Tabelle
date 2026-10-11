@@ -1,0 +1,157 @@
+/* =====================================================
+   FINANZ-MANAGER – Stylesheet
+   ===================================================== */
+
+:root {
+    --primary: #34495e;
+    --success: #27ae60;
+    --warning: #f1c40f;
+    --danger: #e74c3c;
+    --bg: #f4f7f6;
+}
+
+body { font-family: sans-serif; background: var(--bg); padding: 15px; margin: 0; padding-right: 75px; }
+
+/* ---------- Schwebende Navigation rechts ---------- */
+.side-nav {
+    position: fixed;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 1000;
+}
+
+.nav-btn {
+    width: 55px;
+    height: 55px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+    color: #7f8c8d;
+}
+
+.nav-btn.active {
+    background: var(--primary);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* ---------- Karte & Tabs ---------- */
+.card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); max-width: 450px; margin: auto; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.gesamt-container { text-align: center; padding: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; }
+.gesamt-wert { font-size: 2em; font-weight: bold; display: block; }
+
+/* ---------- Kacheln (Zahl oben, Text klein darunter) ---------- */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+.stat {
+    background: #fafafa;
+    padding: 12px 8px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column-reverse; /* Text unten, Zahl oben */
+}
+.stat b { font-size: 0.65em; color: #999; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px; }
+.stat span { font-size: 1.2em; font-weight: bold; color: #333; }
+
+/* ---------- Budget-Balken ---------- */
+.budget-box { margin: 20px 0; background: #fff; padding: 10px; border-radius: 10px; }
+.bar-bg { width: 100%; height: 18px; background: #eee; border-radius: 9px; overflow: hidden; margin-top: 8px; }
+.bar-fill { height: 100%; width: 0%; transition: width 0.8s, background-color 0.5s; }
+.bar-text { display: flex; justify-content: space-between; font-size: 0.85em; font-weight: bold; }
+
+/* ---------- Analyse ---------- */
+.netto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.netto-stat { background: #fdfdfd; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #f0f0f0; }
+.netto-stat b { display: block; font-size: 0.65em; color: #999; text-transform: uppercase; margin-bottom: 4px; }
+.netto-stat span { font-weight: bold; font-size: 1.1em; color: #333; }
+
+.chart-zeile { display: flex; justify-content: space-around; gap: 10px; margin-bottom: 25px; }
+.chart-box { width: 48%; height: 200px; position: relative; text-align: center; }
+.chart-box small { font-weight: bold; color: #7f8c8d; display: block; margin-bottom: 5px; font-size: 10px; }
+
+.uebersicht-table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    font-size: 0.85em;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.uebersicht-table th { background: #f8f9fa; color: #7f8c8d; padding: 10px; text-align: left; font-size: 0.7em; text-transform: uppercase; }
+.uebersicht-table td { padding: 10px; border-top: 1px solid #f0f0f0; }
+.uebersicht-table tr:last-child td { border-bottom: none; }
+.td-val { text-align: right; font-weight: bold; }
+.td-monat { font-weight: bold; color: #34495e; }
+.positiv { color: #27ae60 !important; }
+.negativ { color: #e74c3c !important; }
+
+.bafoeg-titel { text-align: center; margin-top: 30px; margin-bottom: 10px; border-top: 1px dashed #eee; padding-top: 20px; }
+.bafoeg-titel small { color: #999; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+
+/* ---------- Formular ---------- */
+label { display: block; margin: 12px 0 4px 0; font-size: 0.75em; font-weight: bold; color: #7f8c8d; text-transform: uppercase; }
+input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; margin-bottom: 5px; }
+
+.betrag-zeile { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+.betrag-zeile #betrag { flex: 1; margin-bottom: 0; }
+
+.split-box {
+    display: flex; flex-direction: column; align-items: center;
+    background: #f1f3f4; padding: 5px 10px; border-radius: 10px; border: 1px solid #ddd; min-width: 60px;
+}
+.split-box input { width: 20px; height: 20px; cursor: pointer; accent-color: #27ae60; margin: 0; padding: 0; }
+.split-box span { font-size: 10px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; margin-top: 2px; }
+
+/* ---------- Buttons ---------- */
+.btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+button { padding: 16px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 15px; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-ein { background: var(--success); }
+.btn-aus { background: var(--danger); }
+
+.umbuchung-box { background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e0; margin-top: 20px; }
+.btn-umb { background: var(--primary); width: 100%; margin-top: 10px; }
+
+.btn-refresh { background: none; color: #bbb; width: 100%; border: none; font-size: 11px; margin-top: 30px; cursor: pointer; }
+
+/* ---------- Dropdown mit Freitext (Zweck & Kategorie) ---------- */
+.combo { position: relative; }
+.combo input { padding-right: 46px; }
+.combo-btn {
+    position: absolute; top: 0; bottom: 5px; right: 2px; width: 42px;
+    padding: 0; background: none; color: #7f8c8d;
+    display: flex; align-items: center; justify-content: center; border-radius: 10px;
+}
+.combo-list {
+    display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: -3px;
+    max-height: 240px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    background: white; border: 1px solid #ddd; border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.15); z-index: 50;
+}
+.combo-list.open { display: block; }
+.combo-item { padding: 12px 14px; font-size: 15px; border-bottom: 1px solid #f3f3f3; cursor: pointer; }
+.combo-item:last-child { border-bottom: none; }
+.combo-item:hover, .combo-item:active { background: #f4f7f6; }
+
+/* ---------- Overlay & Status ---------- */
+#success-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255,255,255,0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
+}
+
+#status { text-align: center; font-size: 12px; color: #ccc; margin-top: 15px; min-height: 15px; }
