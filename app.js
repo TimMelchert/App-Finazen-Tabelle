@@ -20,23 +20,23 @@ const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGD
 // Betrag eintragen z. B.  betrag: 13.99   (Punkt statt Komma!)   –   leer lassen:  betrag: null
 // Neue Zwecke einfach als neue Zeile ergänzen, die Sortierung passiert automatisch.
 const ZWECK_INFO = {
-    "Gehalt Job Neustadt": { kategorie: "Job",     betrag: 979.97 },
-    "Greenpeace":          { kategorie: "Spenden", betrag: 3.33 },
-    "Internet WG":         { kategorie: "Wohnen",  betrag: 23.98 },
-    "Internet WG Janika":  { kategorie: "Wohnen",  betrag: 4 },
-    "Internet WG Jekabs":  { kategorie: "Wohnen",  betrag: 4 },
-    "Internet WG Sarah":   { kategorie: "Wohnen",  betrag: 4 },
-    "Internet WG Vanessa": { kategorie: "Wohnen",  betrag: 4 },
-    "Internet WG Vincent": { kategorie: "Wohnen",  betrag: 4 },
-    "Kindergeld":          { kategorie: "Staat",   betrag: 259 },
-    "Miete":               { kategorie: "Wohnen",  betrag: 450 },
-    "Netflix":             { kategorie: "Abos",    betrag: 21.99 },
+    "Gehalt Job Neustadt": { kategorie: "Job",     betrag: null },
+    "Greenpeace":          { kategorie: "Spenden", betrag: null },
+    "Internet WG":         { kategorie: "Wohnen",  betrag: null },
+    "Internet WG Janika":  { kategorie: "Wohnen",  betrag: null },
+    "Internet WG Jekabs":  { kategorie: "Wohnen",  betrag: null },
+    "Internet WG Sarah":   { kategorie: "Wohnen",  betrag: null },
+    "Internet WG Vanessa": { kategorie: "Wohnen",  betrag: null },
+    "Internet WG Vincent": { kategorie: "Wohnen",  betrag: null },
+    "Kindergeld":          { kategorie: "Staat",   betrag: null },
+    "Miete":               { kategorie: "Wohnen",  betrag: null },
+    "Netflix":             { kategorie: "Abos",    betrag: null },
     "Netflix Jonathan":    { kategorie: "Abos",    betrag: null },
     "Netflix Miri":        { kategorie: "Abos",    betrag: null },
     "Netflix Zuhause":     { kategorie: "Abos",    betrag: null },
     "Rewe":                { kategorie: "Essen",   betrag: null },
-    "Spotify":             { kategorie: "Abos",    betrag: 17.99 },
-    "Spotify Zuhause":     { kategorie: "Abos",    betrag: 12 }
+    "Spotify":             { kategorie: "Abos",    betrag: null },
+    "Spotify Zuhause":     { kategorie: "Abos",    betrag: null }
 };
 const ZWECKE = Object.keys(ZWECK_INFO);
 
@@ -74,9 +74,9 @@ const RUECKZAHLUNG = {
 const MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
 // Bezeichnungen und Farben der Diagramme (Reihenfolge = Reihenfolge der Daten)
-const AUS_LABELS = ['Allg.', 'Essen', 'Freizeit', 'Hyg.', 'Spend.', 'Style', 'Tech.', 'Wohnen', 'Abos', 'Mobil', 'Geschenk', 'Aktiv.', 'Urlaub', 'Studium', 'Bank'];
+const AUS_LABELS = ['Allg.', 'Essen', 'Freizeit', 'Hyg.', 'Spend.', 'Style', 'Tech.', 'Wohnen', 'Abos', 'Fortbewegung', 'Geschenk', 'Aktiv.', 'Urlaub', 'Studium', 'Bank'];
 const AUS_FARBEN = ['#34495e', '#27ae60', '#f1c40f', '#e67e22', '#e74c3c', '#9b59b6', '#1abc9c', '#d35400', '#2980b9', '#8e44ad', '#2c3e50', '#c0392b', '#16a085', '#273c75', '#95a5a6'];
-const EIN_LABELS = ['Job', 'Allg.', 'Zuhause', 'Staat', 'Tip', 'Bank', 'Oma', 'Abos', 'Wohnen', 'Mobil'];
+const EIN_LABELS = ['Job', 'Allg.', 'Zuhause', 'Staat', 'Tip', 'Bank', 'Oma', 'Abos', 'Wohnen', 'Fortbewegung'];
 const EIN_FARBEN = ['#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#f1c40f', '#34495e', '#e67e22', '#2980b9', '#d35400', '#8e44ad'];
 
 
@@ -238,6 +238,7 @@ let chartEin = null;
 let chartBalken = null;
 let analyseDaten = null;
 let analyseZeit = 0;
+let tabellenJahrWahl = null;  // Jahr, das in der Jahrestabelle angezeigt wird
 let analyseWahl = null;   // gewählter Monat, z. B. "M|2026|Oktober" oder "J|2026" (Ganzes Jahr)
 
 async function holeAnalyse() {
@@ -281,12 +282,19 @@ function werteFuerAuswahl(d, wahl) {
     return monate.find(m => auswahlKey(m) === wahl) || d;  // sonst: aktueller Monat
 }
 
-// Baut die Auswahlliste (Jahr → Monate) und wählt standardmäßig den aktuellen Monat
+function istAktuellerMonat(d, m) {
+    return Number(m.jahr) === (Number(d.jahr) || 0) && norm(m.monat) === norm(d.monat);
+}
+
+// Monate, die zur Auswahl stehen: der aktuelle und alle mit Buchungen
+function sichtbareMonate(d) {
+    return (d.monate || []).filter(m => istAktuellerMonat(d, m) || Math.abs(m.ausgabenGesamt) + Math.abs(m.einnahmenGesamt) > 0.005);
+}
+
+// Baut die Auswahllisten (Monat oben, Jahr der Tabelle) und wählt standardmäßig den aktuellen Monat
 function baueAuswahl(d) {
     const sel = document.getElementById('monat-wahl');
-    const aktJahr = Number(d.jahr) || 0;
-    const istAktuell = (m) => Number(m.jahr) === aktJahr && norm(m.monat) === norm(d.monat);
-    const sichtbar = (d.monate || []).filter(m => istAktuell(m) || Math.abs(m.ausgabenGesamt) + Math.abs(m.einnahmenGesamt) > 0.005);
+    const sichtbar = sichtbareMonate(d);
     const jahre = [...new Set(sichtbar.map(m => m.jahr))].sort((a, b) => b - a);
 
     sel.innerHTML = '';
@@ -297,15 +305,24 @@ function baueAuswahl(d) {
         sichtbar.filter(m => m.jahr === j)
             .sort((a, b) => monatNr(b.monat) - monatNr(a.monat))
             .forEach(m => {
-                gruppe.appendChild(new Option(m.monat + ' ' + j + (istAktuell(m) ? ' (aktuell)' : ''), auswahlKey(m)));
+                gruppe.appendChild(new Option(m.monat + ' ' + j + (istAktuellerMonat(d, m) ? ' (aktuell)' : ''), auswahlKey(m)));
             });
         sel.appendChild(gruppe);
     });
 
     const keys = Array.from(sel.options).map(o => o.value);
-    const aktuellKey = (d.monate || []).filter(istAktuell).map(auswahlKey)[0];
+    const aktuellKey = (d.monate || []).filter(m => istAktuellerMonat(d, m)).map(auswahlKey)[0];
     if (!keys.includes(analyseWahl)) analyseWahl = aktuellKey || keys[0] || null;
     if (analyseWahl) sel.value = analyseWahl;
+
+    // Jahr der Tabelle (Standard: aktuelles Jahr)
+    const tj = document.getElementById('tabellen-jahr');
+    tj.innerHTML = '';
+    jahre.forEach(j => tj.appendChild(new Option(String(j), String(j))));
+    if (!jahre.includes(tabellenJahrWahl)) {
+        tabellenJahrWahl = jahre.includes(Number(d.tabellenJahr)) ? Number(d.tabellenJahr) : (jahre[0] || null);
+    }
+    if (tabellenJahrWahl !== null) tj.value = String(tabellenJahrWahl);
 }
 
 function zeigeAnalyse(d) {
@@ -377,12 +394,44 @@ function zeigeKachel(kat, w, d) {
     if (h.rest === 0 && h.alleBezahlt) kachel.classList.add('erledigt');
 }
 
+// Jahrestabelle für das gewählte Jahr (Tipp auf einen Monat wählt ihn oben aus)
+function renderTabelle(d) {
+    const tbody = document.getElementById('jahres-tabelle-body');
+    const sel = document.getElementById('monat-wahl');
+    tbody.innerHTML = "";
+    (d.monate || []).filter(m => m.jahr === tabellenJahrWahl).forEach(m => {
+        const aus = parseFloat(m.ausgabenGesamt) || 0;
+        const ein = parseFloat(m.einnahmenGesamt) || 0;
+        const bil = parseFloat(m.bilanz) || 0;
+        const bilanzKlasse = bil >= 1 ? 'positiv' : (bil <= -1 ? 'negativ' : '');
+        const einKlasse = ein >= 1 ? 'positiv' : '';
+        const key = auswahlKey(m);
+
+        const tr = document.createElement('tr');
+        tabellenZelle(tr, m.monat, 'td-monat');
+        tabellenZelle(tr, aus.toFixed(2) + " €", 'td-val');
+        tabellenZelle(tr, ein.toFixed(2) + " €", 'td-val ' + einKlasse);
+        tabellenZelle(tr, bil.toFixed(2) + " €", 'td-val ' + bilanzKlasse);
+
+        if (Array.from(sel.options).some(o => o.value === key)) {
+            tr.classList.add('klickbar');
+            if (key === analyseWahl) tr.classList.add('gewaehlt');
+            tr.addEventListener('click', () => {
+                analyseWahl = key;
+                sel.value = key;
+                renderAnalyse(d);
+            });
+        }
+        tbody.appendChild(tr);
+    });
+}
+
 function renderAnalyse(d) {
     const w = werteFuerAuswahl(d, analyseWahl);
     const f2 = (v) => Number(v || 0).toFixed(2);
 
-    // Kopf: Monatsbilanz
-    document.getElementById('anzeige-monat').innerText = w.istJahr ? ("Ganzes Jahr " + w.jahr) : (w.monat + " " + w.jahr);
+    // Kopf: Monats- bzw. Jahresbilanz (der gewählte Zeitraum steht in der Auswahl darunter)
+    document.getElementById('ana-bilanz-label').innerText = w.istJahr ? "Jahresbilanz" : "Monatsbilanz";
     document.getElementById('ana-bilanz').innerText = f2(w.bilanz) + " €";
     document.getElementById('ana-bilanz').style.color = w.bilanz >= 0 ? "var(--success)" : "var(--danger)";
 
@@ -402,37 +451,7 @@ function renderAnalyse(d) {
     const kacheln = { 'ana-mobil': w.nettoMobil, 'ana-bank': w.nettoBank, 'ana-essen': w.nettoEssen, 'ana-allg': w.nettoAllgemein };
     for (const id in kacheln) document.getElementById(id).innerText = f2(kacheln[id]);
 
-    // Jahrestabelle (Tipp auf einen Monat wählt ihn aus)
-    const tbody = document.getElementById('jahres-tabelle-body');
-    tbody.innerHTML = "";
-    (d.jahresUebersicht || []).forEach(m => {
-        if (!m.monat || m.monat.toString().trim() === "") return;
-
-        const aus = parseFloat(m.ausgaben) || 0;
-        const ein = parseFloat(m.einnahmen) || 0;
-        const bil = parseFloat(m.bilanz) || 0;
-        const bilanzKlasse = bil >= 1 ? 'positiv' : (bil <= -1 ? 'negativ' : '');
-        const einKlasse = ein >= 1 ? 'positiv' : '';
-        const key = auswahlKey({ jahr: d.tabellenJahr, monat: m.monat });
-
-        const tr = document.createElement('tr');
-        tabellenZelle(tr, m.monat, 'td-monat');
-        tabellenZelle(tr, aus.toFixed(2) + " €", 'td-val');
-        tabellenZelle(tr, ein.toFixed(2) + " €", 'td-val ' + einKlasse);
-        tabellenZelle(tr, bil.toFixed(2) + " €", 'td-val ' + bilanzKlasse);
-
-        const sel = document.getElementById('monat-wahl');
-        if (Array.from(sel.options).some(o => o.value === key)) {
-            tr.classList.add('klickbar');
-            if (key === analyseWahl) tr.classList.add('gewaehlt');
-            tr.addEventListener('click', () => {
-                analyseWahl = key;
-                sel.value = key;
-                renderAnalyse(d);
-            });
-        }
-        tbody.appendChild(tr);
-    });
+    renderTabelle(d);
 
     // Bafög (unabhängig von der Monatsauswahl)
     if (d.bafoeg) {
@@ -608,6 +627,12 @@ window.onload = () => {
     document.getElementById('monat-wahl').addEventListener('change', (ev) => {
         analyseWahl = ev.target.value;
         if (analyseDaten) renderAnalyse(analyseDaten);
+    });
+
+    // Jahr der Jahrestabelle
+    document.getElementById('tabellen-jahr').addEventListener('change', (ev) => {
+        tabellenJahrWahl = Number(ev.target.value);
+        if (analyseDaten) renderTabelle(analyseDaten);
     });
 
     // Zuletzt bekannte Stände sofort zeigen, solange die frischen laden
