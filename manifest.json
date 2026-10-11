@@ -1,9 +1,11 @@
 {
   "name": "Finanz-Manager",
   "short_name": "Finanzen",
-  "start_url": "index.html",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff", 
+  "background_color": "#ffffff",
   "theme_color": "#27ae60",
   "icons": [
     {
