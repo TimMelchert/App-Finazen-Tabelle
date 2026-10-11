@@ -20,23 +20,23 @@ const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGD
 // Betrag eintragen z. B.  betrag: 13.99   (Punkt statt Komma!)   –   leer lassen:  betrag: null
 // Neue Zwecke einfach als neue Zeile ergänzen, die Sortierung passiert automatisch.
 const ZWECK_INFO = {
-    "Gehalt Job Neustadt": { kategorie: "Job",     betrag: null },
-    "Greenpeace":          { kategorie: "Spenden", betrag: null },
-    "Internet WG":         { kategorie: "Wohnen",  betrag: null },
-    "Internet WG Janika":  { kategorie: "Wohnen",  betrag: null },
-    "Internet WG Jekabs":  { kategorie: "Wohnen",  betrag: null },
-    "Internet WG Sarah":   { kategorie: "Wohnen",  betrag: null },
-    "Internet WG Vanessa": { kategorie: "Wohnen",  betrag: null },
-    "Internet WG Vincent": { kategorie: "Wohnen",  betrag: null },
-    "Kindergeld":          { kategorie: "Staat",   betrag: null },
-    "Miete":               { kategorie: "Wohnen",  betrag: null },
-    "Netflix":             { kategorie: "Abos",    betrag: null },
+    "Gehalt Job Neustadt": { kategorie: "Job",     betrag: 979.97 },
+    "Greenpeace":          { kategorie: "Spenden", betrag: 3.33 },
+    "Internet WG":         { kategorie: "Wohnen",  betrag: 23,98 },
+    "Internet WG Janika":  { kategorie: "Wohnen",  betrag: 4 },
+    "Internet WG Jekabs":  { kategorie: "Wohnen",  betrag: 4 },
+    "Internet WG Sarah":   { kategorie: "Wohnen",  betrag: 4 },
+    "Internet WG Vanessa": { kategorie: "Wohnen",  betrag: 4 },
+    "Internet WG Vincent": { kategorie: "Wohnen",  betrag: 4 },
+    "Kindergeld":          { kategorie: "Staat",   betrag: 259 },
+    "Miete":               { kategorie: "Wohnen",  betrag: 450 },
+    "Netflix":             { kategorie: "Abos",    betrag: 21.99 },
     "Netflix Jonathan":    { kategorie: "Abos",    betrag: null },
     "Netflix Miri":        { kategorie: "Abos",    betrag: null },
     "Netflix Zuhause":     { kategorie: "Abos",    betrag: null },
     "Rewe":                { kategorie: "Essen",   betrag: null },
-    "Spotify":             { kategorie: "Abos",    betrag: null },
-    "Spotify Zuhause":     { kategorie: "Abos",    betrag: null }
+    "Spotify":             { kategorie: "Abos",    betrag: 17.99 },
+    "Spotify Zuhause":     { kategorie: "Abos",    betrag: 12 }
 };
 const ZWECKE = Object.keys(ZWECK_INFO);
 
