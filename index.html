@@ -4,139 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finanz-Manager</title>
+
+    <!-- PWA: Manifest, Farbe, Icon (auch für iPhone) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#27ae60">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Finanzen">
+    <link rel="apple-touch-icon" href="icon.png">
+
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary: #34495e;
-            --success: #27ae60;
-            --warning: #f1c40f;
-            --danger: #e74c3c;
-            --bg: #f4f7f6;
-        }
-       
-        body { font-family: sans-serif; background: var(--bg); padding: 15px; margin: 0; padding-right: 75px; }
-        
-        /* SCHWEBENDE NAVIGATION RECHTS */
-        .side-nav {
-            position: fixed;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            z-index: 1000;
-        }
+    <link rel="stylesheet" href="style.css">
 
-        .nav-btn {
-            width: 55px;
-            height: 55px;
-            background: white;
-            border-radius: 50%;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #7f8c8d;
-        }
-
-        .nav-btn.active { 
-            background: var(--primary); 
-            color: white; 
-            transform: scale(1.1);
-        }
-
-        /* CARDS & CONTENT */
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); max-width: 450px; margin: auto; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .gesamt-container { text-align: center; padding: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; }
-        .gesamt-wert { font-size: 2em; font-weight: bold; display: block; }
-
-        /* KACHELN (Zahl oben, Text klein darunter) */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat { 
-            background: #fafafa; 
-            padding: 12px 8px; 
-            border-radius: 12px; 
-            text-align: center; 
-            border: 1px solid #eee; 
-            display: flex; 
-            flex-direction: column-reverse; /* Dreht Reihenfolge: Text unten, Zahl oben */
-        }
-        .stat b { font-size: 0.65em; color: #999; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px; }
-        .stat span { font-size: 1.2em; font-weight: bold; color: #333; }
-
-        /* BUDGET BALKEN */
-        .budget-box { margin: 20px 0; background: #fff; padding: 10px; border-radius: 10px; }
-        .bar-bg { width: 100%; height: 18px; background: #eee; border-radius: 9px; overflow: hidden; margin-top: 8px; }
-        .bar-fill { height: 100%; width: 0%; transition: width 0.8s, background-color 0.5s; }
-        .bar-text { display: flex; justify-content: space-between; font-size: 0.85em; font-weight: bold; }
-
-        /* ANALYSE GRID */
-        .netto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .netto-stat { background: #fdfdfd; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #f0f0f0; }
-        .netto-stat b { display: block; font-size: 0.65em; color: #999; text-transform: uppercase; margin-bottom: 4px; }
-        .netto-stat span { font-weight: bold; font-size: 1.1em; color: #333; }
-
-        /* FORMULAR */
-        label { display: block; margin: 12px 0 4px 0; font-size: 0.75em; font-weight: bold; color: #7f8c8d; text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; margin-bottom: 5px; }
-        
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button { padding: 16px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 15px; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-ein { background: var(--success); }
-        .btn-aus { background: var(--danger); }
-        
-        .umbuchung-box { background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e0; margin-top: 20px; }
-        .btn-umb { background: var(--primary); width: 100%; margin-top: 10px; }
-
-        /* DROPDOWN MIT FREITEXT (Zweck & Kategorie) */
-        .combo { position: relative; }
-        .combo input { padding-right: 46px; }
-        .combo-btn {
-            position: absolute; top: 0; bottom: 5px; right: 2px; width: 42px;
-            padding: 0; background: none; color: #7f8c8d;
-            display: flex; align-items: center; justify-content: center; border-radius: 10px;
-        }
-        .combo-list {
-            display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: -3px;
-            max-height: 240px; overflow-y: auto; -webkit-overflow-scrolling: touch;
-            background: white; border: 1px solid #ddd; border-radius: 10px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.15); z-index: 50;
-        }
-        .combo-list.open { display: block; }
-        .combo-item { padding: 12px 14px; font-size: 15px; border-bottom: 1px solid #f3f3f3; cursor: pointer; }
-        .combo-item:last-child { border-bottom: none; }
-        .combo-item:hover, .combo-item:active { background: #f4f7f6; }
-
-        #success-overlay {
-            display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
-            background:rgba(255,255,255,0.95); z-index:9999; justify-content:center; align-items:center; flex-direction:column;
-        }
-        
-        .uebersicht-table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-            font-size: 0.85em;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .uebersicht-table th { background: #f8f9fa; color: #7f8c8d; padding: 10px; text-align: left; font-size: 0.7em; text-transform: uppercase; }
-        .uebersicht-table td { padding: 10px; border-top: 1px solid #f0f0f0; }
-        .uebersicht-table tr:last-child td { border-bottom: none; }
-        .td-val { text-align: right; font-weight: bold; }
-        .positiv { color: #27ae60 !important; }
-        .negativ { color: #e74c3c !important; }
-    </style>
+    <!-- Chart.js mit fest eingetragener Version (wird nicht mehr automatisch auf "neueste" aktualisiert) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 </head>
 <body>
 
@@ -155,7 +35,8 @@
 </div>
 
 <div class="card">
-    
+
+    <!-- ===== TAB: EINGABE ===== -->
     <div id="tab-eingabe" class="tab-content active">
         <div class="gesamt-container">
             <span id="val-gesamt" class="gesamt-wert">... €</span>
@@ -180,6 +61,7 @@
             <option value="Muenzglas">Münzglas</option>
             <option value="Pfandbons">Pfandbons</option>
         </select>
+
         <label>Datum</label>
         <input type="date" id="datum">
 
@@ -195,14 +77,13 @@
             <button type="button" class="combo-btn" aria-label="Liste öffnen"><span class="material-icons">arrow_drop_down</span></button>
             <div class="combo-list"></div>
         </div>
-        
-        <label>Betrag (€) & Split</label>
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-            <input type="number" id="betrag" placeholder="0.00" step="0.01" inputmode="decimal" style="flex: 1; margin-bottom: 0;">
 
-            <div style="display: flex; flex-direction: column; align-items: center; background: #f1f3f4; padding: 5px 10px; border-radius: 10px; border: 1px solid #ddd; min-width: 60px;">
-                <input type="checkbox" id="split" style="width: 20px; height: 20px; cursor: pointer; accent-color: #27ae60; margin: 0;">
-                <span style="font-size: 10px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; margin-top: 2px;">Split</span>
+        <label>Betrag (€) & Split</label>
+        <div class="betrag-zeile">
+            <input type="number" id="betrag" placeholder="0.00" step="0.01" inputmode="decimal">
+            <div class="split-box">
+                <input type="checkbox" id="split">
+                <span>Split</span>
             </div>
         </div>
 
@@ -225,6 +106,7 @@
         </div>
     </div>
 
+    <!-- ===== TAB: ANALYSE ===== -->
     <div id="tab-analyse" class="tab-content">
         <div class="gesamt-container">
             <small style="font-weight:bold; color:#7f8c8d; text-transform: uppercase; letter-spacing: 1px;">Monatsbilanz</small>
@@ -232,13 +114,13 @@
             <small id="anzeige-monat">Monat laden...</small>
         </div>
 
-        <div style="display: flex; justify-content: space-around; gap: 10px; margin-bottom: 25px;">
-            <div style="width: 48%; height: 200px; position: relative; text-align: center;">
-                <small style="font-weight:bold; color:#7f8c8d; display:block; margin-bottom:5px; font-size: 10px;">AUSGABEN</small>
+        <div class="chart-zeile">
+            <div class="chart-box">
+                <small>AUSGABEN</small>
                 <canvas id="chartAusgaben"></canvas>
             </div>
-            <div style="width: 48%; height: 200px; position: relative; text-align: center;">
-                <small style="font-weight:bold; color:#7f8c8d; display:block; margin-bottom:5px; font-size: 10px;">EINNAHMEN</small>
+            <div class="chart-box">
+                <small>EINNAHMEN</small>
                 <canvas id="chartEinnahmen"></canvas>
             </div>
         </div>
@@ -274,376 +156,21 @@
             <tbody id="jahres-tabelle-body"></tbody>
         </table>
 
-        <div style="text-align: center; margin-top: 30px; margin-bottom: 10px; border-top: 1px dashed #eee; padding-top: 20px;">
-            <small style="color: #999; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Bafög Schulden</small>
+        <div class="bafoeg-titel">
+            <small>Bafög Schulden</small>
         </div>
         <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 20px;">
-            <div class="stat">
-                <b>Gesamt erhalten</b>
-                <span id="b-zahlung">0.00 €</span>
-            </div>
-            <div class="stat">
-                <b>Darlehen</b>
-                <span id="b-darlehen">0.00 €</span>
-            </div>
-            <div class="stat">
-                <b>Rückzahlung</b>
-                <span id="b-rueck">0.00 €</span>
-            </div>
+            <div class="stat"><b>Gesamt erhalten</b><span id="b-zahlung">0.00 €</span></div>
+            <div class="stat"><b>Darlehen</b><span id="b-darlehen">0.00 €</span></div>
+            <div class="stat"><b>Rückzahlung</b><span id="b-rueck">0.00 €</span></div>
         </div>
-            
-        <button onclick="ladeAnalyse()" style="background:none; color:#bbb; width:100%; border:none; font-size:11px; margin-top:30px; cursor:pointer;">DATEN AKTUALISIEREN</button>
+
+        <button onclick="ladeAnalyse()" class="btn-refresh">DATEN AKTUALISIEREN</button>
     </div>
 
-    <p id="status" style="text-align:center; font-size:12px; color:#ccc; margin-top:15px; min-height:15px;"></p>
+    <p id="status"></p>
 </div>
 
-<script>
-    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGDkieud8N_cGO7xeoTvDxwn7_fPTHSD6THuxaeInnfLTdf75arw/exec"; 
-
-    // ===== LISTEN FÜR DIE DROPDOWNS =====
-    // Hier kannst du einfach Einträge ergänzen oder löschen.
-    // Die Sortierung nach Alphabet passiert automatisch.
-    const ZWECKE = [
-        "Gehalt Job Neustadt", "Greenpeace", "Internet WG", "Internet WG Janika", "Internet WG Jekabs",
-        "Internet WG Sarah", "Internet WG Vanessa", "Internet WG Vincent", "Kindergeld",
-        "Miete", "Netflix", "Netflix Miri", "Netflix Zuhause", "Rewe", "Spotify", "Spotify Zuhause"
-    ];
-    const KATEGORIEN = [
-        "Allgemein", "Abos", "Aktivismus", "Bank", "Essen", "Fortbewegung", "Freizeit", "Geschenk",
-        "Großeltern", "Hygiene", "Job", "Spenden", "Staat", "Studium", "Style",
-        "Technik", "Urlaub", "Wohnen", "Zuhause"
-    ];
-    
-    let userPin = localStorage.getItem('finanz_pin') || prompt("Passwort:") || "";
-
-    // Zentrale Anfrage an das Script (alles per POST, Passwort nie in der URL)
-    async function api(action, extra = {}, erneut = true) {
-        const response = await fetch(GOOGLE_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ ...extra, pin: userPin, action })
-        });
-        const d = await response.json();
-
-        if (d.error === 'pin') {
-            localStorage.removeItem('finanz_pin');
-            if (!erneut) throw new Error('Passwort falsch');
-            const neu = prompt("Passwort falsch. Bitte erneut eingeben:");
-            if (!neu) throw new Error('Kein Passwort eingegeben');
-            userPin = neu;
-            return api(action, extra, false);
-        }
-        if (d.error) throw new Error(d.message || d.error);
-
-        localStorage.setItem('finanz_pin', userPin); // erst nach Erfolg merken
-        return d;
-    }
-
-    // ===== DROPDOWN MIT FREITEXT =====
-    function initCombo(wrapId, items) {
-        const wrap = document.getElementById(wrapId);
-        const input = wrap.querySelector('input');
-        const btn = wrap.querySelector('.combo-btn');
-        const list = wrap.querySelector('.combo-list');
-        const sortiert = [...items].sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' }));
-
-        function close() { list.classList.remove('open'); }
-
-        function open(filter) {
-            const f = (filter || '').toLowerCase();
-            const treffer = f ? sortiert.filter(i => i.toLowerCase().includes(f)) : sortiert;
-            list.innerHTML = '';
-            treffer.forEach(i => {
-                const div = document.createElement('div');
-                div.className = 'combo-item';
-                div.textContent = i;
-                div.addEventListener('click', () => { input.value = i; close(); });
-                list.appendChild(div);
-            });
-            if (treffer.length > 0) list.classList.add('open'); else close();
-        }
-
-        input.addEventListener('input', () => open(input.value));
-        // Am PC: Klick irgendwo ins Feld öffnet die Liste (am Handy bleibt es beim Pfeil)
-            if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-            input.addEventListener('click', () => { if (!list.classList.contains('open')) open(''); });
-        }
-            // Pfeil-nach-unten öffnet die Liste ebenfalls
-            input.addEventListener('keydown', (ev) => { if (ev.key === 'ArrowDown') open(input.value); });
-        input.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') close(); });
-        btn.addEventListener('click', () => { list.classList.contains('open') ? close() : open(''); });
-        document.addEventListener('click', (ev) => { if (!wrap.contains(ev.target)) close(); });
-    }
-
-    // ===== DATUM =====
-    // Heutiges Datum in deiner Ortszeit (nicht UTC), daher auch nachts korrekt
-    function heute() {
-        const d = new Date();
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    }
-    let datumManuell = false; // wird true, sobald du das Datum selbst änderst
-
-    window.onload = () => {
-        const datumEl = document.getElementById('datum');
-        datumEl.value = heute();
-        datumEl.addEventListener('change', () => { datumManuell = true; });
-
-        // Wurde die App über Nacht offen gelassen und das Datum nicht selbst geändert: auf heute setzen
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && !datumManuell) datumEl.value = heute();
-        });
-
-        initCombo('combo-zweck', ZWECKE);
-        initCombo('combo-kategorie', KATEGORIEN);
-
-        // Zuletzt bekannte Stände sofort zeigen, solange die frischen laden
-        try {
-            const alt = localStorage.getItem('finanz_stats');
-            if (alt) zeigeStats(JSON.parse(alt));
-        } catch (e) {}
-
-        loadStats(true);
-    };
-
-    function switchTab(tab) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('tab-' + tab).classList.add('active');
-        document.getElementById('btn-tab-' + tab).classList.add('active');
-        if (tab === 'analyse') {
-            if (analyseDaten) {
-                zeigeAnalyse(analyseDaten);
-                if (Date.now() - analyseZeit > 60000) ladeAnalyse(); // älter als 1 Minute: im Hintergrund auffrischen
-            } else {
-                ladeAnalyse();
-            }
-        }
-    }
-
-    // ===== KONTOSTÄNDE =====
-    function zeigeStats(s) {
-        const f = (v) => Number(v || 0).toFixed(2);
-        document.getElementById('val-gesamt').innerText = f(s.gesamt) + " €";
-        document.getElementById('val-konto').innerText = f(s.konto);
-        document.getElementById('val-paypal').innerText = f(s.paypal);
-        document.getElementById('val-kreditkarte').innerText = f(s.kreditkarte);
-        document.getElementById('val-portemonnaie').innerText = f(s.portemonnaie);
-        document.getElementById('val-muenzglas').innerText = f(s.muenzglas);
-        document.getElementById('val-pfandbons').innerText = f(s.pfandbons);
-        document.getElementById('val-gesamt').style.color = Number(s.gesamt) >= 0 ? "#27ae60" : "#e74c3c";
-        try { localStorage.setItem('finanz_stats', JSON.stringify(s)); } catch (e) {}
-    }
-
-    async function loadStats(mitAnalyseVorladen = false) {
-        const statusEl = document.getElementById('status');
-        statusEl.innerText = "Aktualisiere Kontostände...";
-        try {
-            const s = await api('stats');
-            zeigeStats(s);
-            statusEl.innerText = "";
-            // Analyse im Hintergrund vorladen, damit der Tab später sofort da ist
-            if (mitAnalyseVorladen) holeAnalyse().catch(() => {});
-        } catch(e) { 
-            statusEl.innerText = "Fehler: " + e.message; 
-        }
-    }
-
-    // ===== ANALYSE =====
-    let chartAus = null;
-    let chartEin = null;
-    let analyseDaten = null;
-    let analyseZeit = 0;
-
-    async function holeAnalyse() {
-        const d = await api('analyse');
-        analyseDaten = d;
-        analyseZeit = Date.now();
-        return d;
-    }
-
-    async function ladeAnalyse() {
-        document.getElementById('status').innerText = "Analyse wird berechnet...";
-        try {
-            const d = await holeAnalyse();
-            zeigeAnalyse(d);
-        } catch(e) {
-            document.getElementById('status').innerText = "Fehler: " + e.message;
-            console.error("Analyse Fehler:", e);
-        }
-    }
-
-    function zeigeAnalyse(d) {
-        const f2 = (v) => Number(v || 0).toFixed(2);
-
-        document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
-        document.getElementById('ana-bilanz').innerText = f2(d.bilanz) + " €";
-        document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "var(--success)" : "var(--danger)";
-        
-        const nettoGesamt = parseFloat(d.nettoGesamt) || 0;
-        const prozent = d.budgetMonat > 0 ? Math.min((nettoGesamt / d.budgetMonat) * 100, 100) : 0;
-
-        const bar = document.getElementById('ana-budget-bar');
-        if (bar) {
-            bar.style.width = Math.max(0, prozent) + "%";
-            bar.style.backgroundColor = prozent < 80 ? "var(--success)" : "var(--danger)";
-        }
-        document.getElementById('ana-budget-text').innerText = Math.round(nettoGesamt) + " / " + d.budgetMonat + " €";
-
-        // Netto-Kacheln
-        const kacheln = {
-            'ana-abos': d.nettoAbos, 'ana-wohnen': d.nettoWohnen, 
-            'ana-mobil': d.nettoMobil, 'ana-bank': d.nettoBank, 
-            'ana-essen': d.nettoEssen, 'ana-allg': d.nettoAllgemein
-        };
-        for (let id in kacheln) {
-            const el = document.getElementById(id);
-            if (el) el.innerText = f2(kacheln[id]);
-        }
-
-        // Jahrestabelle
-        const tbody = document.getElementById('jahres-tabelle-body');
-        if (tbody && Array.isArray(d.jahresUebersicht)) {
-            tbody.innerHTML = "";
-            d.jahresUebersicht.forEach(m => {
-                if (m.monat && m.monat.toString().trim() !== "") {
-                    const tr = document.createElement('tr');
-                    const aus = parseFloat(m.ausgaben) || 0;
-                    const ein = parseFloat(m.einnahmen) || 0;
-                    const bil = parseFloat(m.bilanz) || 0;
-
-                    let bilanzClass = '';
-                    if (bil >= 1) bilanzClass = 'positiv';
-                    else if (bil <= -1) bilanzClass = 'negativ';
-                    const einnahmenClass = ein >= 1 ? 'positiv' : '';
-
-                    tr.innerHTML = `
-                        <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
-                        <td class="td-val">${aus.toFixed(2)} €</td>
-                        <td class="td-val ${einnahmenClass}">${ein.toFixed(2)} €</td>
-                        <td class="td-val ${bilanzClass}">${bil.toFixed(2)} €</td>
-                    `;
-                    tbody.appendChild(tr);
-                }
-            });
-        }
-
-        // Bafög (jetzt außerhalb der Monatsschleife)
-        if (d.bafoeg) {
-            document.getElementById('b-zahlung').innerText = Number(d.bafoeg.zahlung || 0).toLocaleString() + " €";
-            document.getElementById('b-darlehen').innerText = Number(d.bafoeg.darlehen || 0).toLocaleString() + " €";
-            document.getElementById('b-rueck').innerText = Number(d.bafoeg.rueckzahlung || 0).toLocaleString() + " €";
-        }
-
-        renderCharts(d);
-
-        // Hinweis, falls im Sheet Spaltennamen fehlen oder umbenannt wurden
-        document.getElementById('status').innerText =
-            (d.fehlendeSpalten && d.fehlendeSpalten.length)
-                ? "Hinweis: Diese Spalten fehlen in Zeile 7: " + d.fehlendeSpalten.join(", ")
-                : "";
-    }
-
-    function renderCharts(d) {
-        const chartOptions = {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 8, font: { size: 9 }, padding: 10 } } },
-            cutout: '65%'
-        };
-
-        const filterData = (labels, values, colors) => {
-            const fL = [], fV = [], fC = [];
-            values.forEach((v, i) => {
-                if (Math.abs(v) > 0.1) { fL.push(labels[i]); fV.push(Math.abs(v)); fC.push(colors[i]); }
-            });
-            return { labels: fL, values: fV, colors: fC };
-        };
-
-        // Ausgaben Chart
-        const aus = filterData(
-            ['Allg.', 'Essen', 'Freizeit', 'Hyg.', 'Spend.', 'Style', 'Tech.', 'Wohnen', 'Abos', 'Mobil', 'Geschenk', 'Aktiv.', 'Urlaub', 'Studium', 'Bank'],
-            [d.aus_Allg, d.aus_Essen, d.aus_Freizeit, d.aus_Hygiene, d.aus_Spenden, d.aus_Style, d.aus_Technik, d.aus_Wohnen, d.aus_Abos, d.aus_Mobil, d.aus_Geschenk, d.aus_Aktivismus, d.aus_Urlaub, d.aus_Studium, d.aus_Bank],
-            ['#34495e', '#27ae60', '#f1c40f', '#e67e22', '#e74c3c', '#9b59b6', '#1abc9c', '#d35400', '#2980b9', '#8e44ad', '#2c3e50', '#c0392b', '#16a085', '#273c75', '#95a5a6']
-        );
-        if (chartAus) chartAus.destroy();
-        chartAus = new Chart(document.getElementById('chartAusgaben'), {
-            type: 'doughnut',
-            data: { labels: aus.labels, datasets: [{ data: aus.values, backgroundColor: aus.colors, borderWidth: 1 }] },
-            options: chartOptions
-        });
-
-        // Einnahmen Chart
-        const ein = filterData(
-            ['Job', 'Allg.', 'Zuhause', 'Staat', 'Tip', 'Bank', 'Oma', 'Abos', 'Wohnen', 'Mobil'],
-            [d.einJob || 0, d.einAllg || 0, d.einZuhause || 0, d.einStaat || 0, d.einTrinkgeld || 0, d.einBank || 0, d.einOma || 0, d.einAbos || 0, d.einWohnen || 0, d.einMobil || 0],
-            ['#27ae60', '#2ecc71', '#1abc9c', '#16a085', '#f1c40f', '#34495e', '#e67e22', '#2980b9', '#d35400', '#8e44ad']
-        );
-        if (chartEin) chartEin.destroy();
-        chartEin = new Chart(document.getElementById('chartEinnahmen'), {
-            type: 'doughnut',
-            data: { labels: ein.labels, datasets: [{ data: ein.values, backgroundColor: ein.colors, borderWidth: 1 }] },
-            options: chartOptions
-        });
-    }
-
-    // ===== BUCHEN =====
-    let sendet = false; // verhindert Doppelbuchungen durch mehrfaches Tippen
-
-    function sperreButtons(sperren) {
-        document.querySelectorAll('.btn-aus, .btn-ein, .btn-umb').forEach(b => { b.disabled = sperren; });
-    }
-
-    async function senden(typ) {
-        if (sendet) return;
-
-        const overlay = document.getElementById('success-overlay');
-        const betragField = document.getElementById('betrag');
-        const zweckField = document.getElementById('zweck');
-        const isSplit = document.getElementById('split').checked;
-
-        const data = {
-            reiter: document.getElementById('reiter').value,
-            ziel: document.getElementById('ziel_reiter').value,
-            betrag: parseFloat(betragField.value),
-            zweck: zweckField.value.trim() || "Transfer",
-            kategorie: document.getElementById('kategorie').value.trim() || "Allgemein",
-            datum: document.getElementById('datum').value,
-            split: isSplit,
-            mode: typ
-        };
-        
-        if (isNaN(data.betrag) || data.betrag <= 0) return alert("Bitte einen Betrag größer 0 eingeben!");
-        if (typ === 'umbuchung' && data.reiter === data.ziel) return alert("Quelle und Ziel sind gleich!");
-
-        sendet = true;
-        sperreButtons(true);
-        document.getElementById('status').innerText = "Speichere...";
-
-        try {
-            const s = await api('buchen', data);
-            zeigeStats(s); // das Script liefert die neuen Stände gleich mit
-
-            // Felder leeren, das Datum bleibt wie eingestellt
-            betragField.value = "";
-            zweckField.value = "";
-            document.getElementById('kategorie').value = "";
-            document.getElementById('split').checked = false;
-            document.getElementById('status').innerText = "";
-            analyseZeit = 0; // Analyse beim nächsten Öffnen neu laden
-
-            overlay.style.display = 'flex';
-            setTimeout(() => { 
-                overlay.style.display = 'none'; 
-                if (document.getElementById('tab-analyse').classList.contains('active')) ladeAnalyse();
-            }, 1200);
-        } catch(e) { 
-            alert("NICHT gespeichert: " + e.message); 
-            document.getElementById('status').innerText = "";
-        } finally {
-            sendet = false;
-            sperreButtons(false);
-        }
-    }
-</script>
+<script src="app.js"></script>
 </body>
 </html>
