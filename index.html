@@ -89,11 +89,31 @@
         
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         button { padding: 16px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 15px; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-ein { background: var(--success); }
         .btn-aus { background: var(--danger); }
         
         .umbuchung-box { background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e0; margin-top: 20px; }
         .btn-umb { background: var(--primary); width: 100%; margin-top: 10px; }
+
+        /* DROPDOWN MIT FREITEXT (Zweck & Kategorie) */
+        .combo { position: relative; }
+        .combo input { padding-right: 46px; }
+        .combo-btn {
+            position: absolute; top: 0; bottom: 5px; right: 2px; width: 42px;
+            padding: 0; background: none; color: #7f8c8d;
+            display: flex; align-items: center; justify-content: center; border-radius: 10px;
+        }
+        .combo-list {
+            display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: -3px;
+            max-height: 240px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            background: white; border: 1px solid #ddd; border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.15); z-index: 50;
+        }
+        .combo-list.open { display: block; }
+        .combo-item { padding: 12px 14px; font-size: 15px; border-bottom: 1px solid #f3f3f3; cursor: pointer; }
+        .combo-item:last-child { border-bottom: none; }
+        .combo-item:hover, .combo-item:active { background: #f4f7f6; }
 
         #success-overlay {
             display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
@@ -164,38 +184,26 @@
         <input type="date" id="datum">
 
         <label>Zweck</label>
-        <input type="text" id="zweck" placeholder="z.B. Rewe Einkauf">
-        <input list="kat-liste" id="kategorie" placeholder="Kategorie wählen">
-        <datalist id="kat-liste">
-            <option value="Abos">
-            <option value="Aktivismus">
-            <option value="Essen">
-            <option value="Fortbewegung">
-            <option value="Freizeit">
-            <option value="Geschenk">
-            <option value="Hygiene">
-            <option value="Spenden">
-            <option value="Studium">
-            <option value="Style">
-            <option value="Technik">
-            <option value="Urlaub">
-            <option value="Wohnen">
-                
-            <option value="Bank">
-            <option value="Großeltern">
-            <option value="Job">
-            <option value="Staat">
-            <option value="Zuhause">
-        </datalist>
+        <div class="combo" id="combo-zweck">
+            <input type="text" id="zweck" placeholder="Zweck wählen oder eintippen" autocomplete="off" maxlength="100">
+            <button type="button" class="combo-btn" aria-label="Liste öffnen"><span class="material-icons">arrow_drop_down</span></button>
+            <div class="combo-list"></div>
+        </div>
+
+        <div class="combo" id="combo-kategorie">
+            <input type="text" id="kategorie" placeholder="Kategorie wählen oder eintippen" autocomplete="off" maxlength="40">
+            <button type="button" class="combo-btn" aria-label="Liste öffnen"><span class="material-icons">arrow_drop_down</span></button>
+            <div class="combo-list"></div>
+        </div>
         
         <label>Betrag (€) & Split</label>
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-        <input type="number" id="betrag" placeholder="0.00" step="0.01" inputmode="decimal" style="flex: 1; margin-bottom: 0;">
+            <input type="number" id="betrag" placeholder="0.00" step="0.01" inputmode="decimal" style="flex: 1; margin-bottom: 0;">
 
-        <div style="display: flex; flex-direction: column; align-items: center; background: #f1f3f4; padding: 5px 10px; border-radius: 10px; border: 1px solid #ddd; min-width: 60px;">
-        <input type="checkbox" id="split" style="width: 20px; height: 20px; cursor: pointer; accent-color: #27ae60; margin: 0;">
-        <span style="font-size: 10px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; margin-top: 2px;">Split</span>
-        </div>
+            <div style="display: flex; flex-direction: column; align-items: center; background: #f1f3f4; padding: 5px 10px; border-radius: 10px; border: 1px solid #ddd; min-width: 60px;">
+                <input type="checkbox" id="split" style="width: 20px; height: 20px; cursor: pointer; accent-color: #27ae60; margin: 0;">
+                <span style="font-size: 10px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; margin-top: 2px;">Split</span>
+            </div>
         </div>
 
         <div class="btn-group">
@@ -292,6 +300,20 @@
 
 <script>
     const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGDkieud8N_cGO7xeoTvDxwn7_fPTHSD6THuxaeInnfLTdf75arw/exec"; 
+
+    // ===== LISTEN FÜR DIE DROPDOWNS =====
+    // Hier kannst du einfach Einträge ergänzen oder löschen.
+    // Die Sortierung nach Alphabet passiert automatisch.
+    const ZWECKE = [
+        "Gehalt Job Neustadt", "Greenpeace", "Internet WG", "Internet WG Janika", "Internet WG Jekabs",
+        "Internet WG Sarah", "Internet WG Vanessa", "Internet WG Vincent", "Kindergeld",
+        "Miete", "Netflix", "Netflix Miri", "Netflix Zuhause", "Rewe", "Spotify", "Spotify Zuhause"
+    ];
+    const KATEGORIEN = [
+        "Allgemein", "Abos", "Aktivismus", "Bank", "Essen", "Fortbewegung", "Freizeit", "Geschenk",
+        "Großeltern", "Hygiene", "Job", "Spenden", "Staat", "Studium", "Style",
+        "Technik", "Urlaub", "Wohnen", "Zuhause"
+    ];
     
     let userPin = localStorage.getItem('finanz_pin') || prompt("Passwort:") || "";
 
@@ -318,9 +340,64 @@
         return d;
     }
 
+    // ===== DROPDOWN MIT FREITEXT =====
+    function initCombo(wrapId, items) {
+        const wrap = document.getElementById(wrapId);
+        const input = wrap.querySelector('input');
+        const btn = wrap.querySelector('.combo-btn');
+        const list = wrap.querySelector('.combo-list');
+        const sortiert = [...items].sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' }));
+
+        function close() { list.classList.remove('open'); }
+
+        function open(filter) {
+            const f = (filter || '').toLowerCase();
+            const treffer = f ? sortiert.filter(i => i.toLowerCase().includes(f)) : sortiert;
+            list.innerHTML = '';
+            treffer.forEach(i => {
+                const div = document.createElement('div');
+                div.className = 'combo-item';
+                div.textContent = i;
+                div.addEventListener('click', () => { input.value = i; close(); });
+                list.appendChild(div);
+            });
+            if (treffer.length > 0) list.classList.add('open'); else close();
+        }
+
+        input.addEventListener('input', () => open(input.value));
+        input.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') close(); });
+        btn.addEventListener('click', () => { list.classList.contains('open') ? close() : open(''); });
+        document.addEventListener('click', (ev) => { if (!wrap.contains(ev.target)) close(); });
+    }
+
+    // ===== DATUM =====
+    // Heutiges Datum in deiner Ortszeit (nicht UTC), daher auch nachts korrekt
+    function heute() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    let datumManuell = false; // wird true, sobald du das Datum selbst änderst
+
     window.onload = () => {
-        document.getElementById('datum').valueAsDate = new Date();
-        loadStats();
+        const datumEl = document.getElementById('datum');
+        datumEl.value = heute();
+        datumEl.addEventListener('change', () => { datumManuell = true; });
+
+        // Wurde die App über Nacht offen gelassen und das Datum nicht selbst geändert: auf heute setzen
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && !datumManuell) datumEl.value = heute();
+        });
+
+        initCombo('combo-zweck', ZWECKE);
+        initCombo('combo-kategorie', KATEGORIEN);
+
+        // Zuletzt bekannte Stände sofort zeigen, solange die frischen laden
+        try {
+            const alt = localStorage.getItem('finanz_stats');
+            if (alt) zeigeStats(JSON.parse(alt));
+        } catch (e) {}
+
+        loadStats(true);
     };
 
     function switchTab(tab) {
@@ -328,110 +405,137 @@
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + tab).classList.add('active');
         document.getElementById('btn-tab-' + tab).classList.add('active');
-        if(tab === 'analyse') ladeAnalyse();
+        if (tab === 'analyse') {
+            if (analyseDaten) {
+                zeigeAnalyse(analyseDaten);
+                if (Date.now() - analyseZeit > 60000) ladeAnalyse(); // älter als 1 Minute: im Hintergrund auffrischen
+            } else {
+                ladeAnalyse();
+            }
+        }
     }
 
-    async function loadStats() {
+    // ===== KONTOSTÄNDE =====
+    function zeigeStats(s) {
+        const f = (v) => Number(v || 0).toFixed(2);
+        document.getElementById('val-gesamt').innerText = f(s.gesamt) + " €";
+        document.getElementById('val-konto').innerText = f(s.konto);
+        document.getElementById('val-paypal').innerText = f(s.paypal);
+        document.getElementById('val-kreditkarte').innerText = f(s.kreditkarte);
+        document.getElementById('val-portemonnaie').innerText = f(s.portemonnaie);
+        document.getElementById('val-muenzglas').innerText = f(s.muenzglas);
+        document.getElementById('val-pfandbons').innerText = f(s.pfandbons);
+        document.getElementById('val-gesamt').style.color = Number(s.gesamt) >= 0 ? "#27ae60" : "#e74c3c";
+        try { localStorage.setItem('finanz_stats', JSON.stringify(s)); } catch (e) {}
+    }
+
+    async function loadStats(mitAnalyseVorladen = false) {
         const statusEl = document.getElementById('status');
-        statusEl.innerText = "Lade Kontostände...";
+        statusEl.innerText = "Aktualisiere Kontostände...";
         try {
             const s = await api('stats');
-            document.getElementById('val-gesamt').innerText = s.gesamt.toFixed(2) + " €";
-            document.getElementById('val-konto').innerText = s.konto.toFixed(2);
-            document.getElementById('val-paypal').innerText = s.paypal.toFixed(2);
-            document.getElementById('val-kreditkarte').innerText = s.kreditkarte.toFixed(2);
-            document.getElementById('val-portemonnaie').innerText = s.portemonnaie.toFixed(2);
-            document.getElementById('val-muenzglas').innerText = s.muenzglas.toFixed(2);
-            document.getElementById('val-pfandbons').innerText = s.pfandbons.toFixed(2);
-            
-            document.getElementById('val-gesamt').style.color = s.gesamt >= 0 ? "#27ae60" : "#e74c3c";
+            zeigeStats(s);
             statusEl.innerText = "";
+            // Analyse im Hintergrund vorladen, damit der Tab später sofort da ist
+            if (mitAnalyseVorladen) holeAnalyse().catch(() => {});
         } catch(e) { 
             statusEl.innerText = "Fehler: " + e.message; 
         }
     }
 
+    // ===== ANALYSE =====
     let chartAus = null;
     let chartEin = null;
+    let analyseDaten = null;
+    let analyseZeit = 0;
+
+    async function holeAnalyse() {
+        const d = await api('analyse');
+        analyseDaten = d;
+        analyseZeit = Date.now();
+        return d;
+    }
 
     async function ladeAnalyse() {
         document.getElementById('status').innerText = "Analyse wird berechnet...";
         try {
-            const d = await api('analyse');
-            
-            document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
-            document.getElementById('ana-bilanz').innerText = d.bilanz.toFixed(2) + " €";
-            document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "var(--success)" : "var(--danger)";
-            
-            const nettoGesamt = parseFloat(d.nettoGesamt) || 0;
-            const prozent = d.budgetMonat > 0 ? Math.min((nettoGesamt / d.budgetMonat) * 100, 100) : 0;
-
-            const bar = document.getElementById('ana-budget-bar');
-            if (bar) {
-                bar.style.width = Math.max(0, prozent) + "%";
-                bar.style.backgroundColor = prozent < 80 ? "var(--success)" : "var(--danger)";
-            }
-            document.getElementById('ana-budget-text').innerText = Math.round(nettoGesamt) + " / " + d.budgetMonat + " €";
-
-            // Netto-Kacheln
-            const kacheln = {
-                'ana-abos': d.nettoAbos, 'ana-wohnen': d.nettoWohnen, 
-                'ana-mobil': d.nettoMobil, 'ana-bank': d.nettoBank, 
-                'ana-essen': d.nettoEssen, 'ana-allg': d.nettoAllgemein
-            };
-            for (let id in kacheln) {
-                const el = document.getElementById(id);
-                if (el) el.innerText = kacheln[id].toFixed(2);
-            }
-
-            // JAHRESTABELLE
-            const tbody = document.getElementById('jahres-tabelle-body');
-            if (tbody && d.jahresUebersicht && Array.isArray(d.jahresUebersicht)) {
-                tbody.innerHTML = "";
-                d.jahresUebersicht.forEach(m => {
-                    // Wir prüfen nur, ob ein Monatsname da ist (Spalte B)
-                    if (m.monat && m.monat.toString().trim() !== "") {
-                        const tr = document.createElement('tr');
-                
-                        // Werte sicher in Zahlen umwandeln (0 als Fallback für leere Zellen)
-                        const aus = parseFloat(m.ausgaben) || 0;
-                        const ein = parseFloat(m.einnahmen) || 0;
-                        const bil = parseFloat(m.bilanz) || 0;
-                
-                        let bilanzClass = ''; 
-                        if (bil >= 1) {
-                            bilanzClass = 'positiv';
-                        } else if (bil <= -1) {
-                            bilanzClass = 'negativ';
-                        }
-
-                        // Einnahmen-Spalte neutral halten, wenn 0
-                        const einnahmenClass = ein >= 1 ? 'positiv' : '';
-                        
-                        tr.innerHTML = `
-                            <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
-                            <td class="td-val">${aus.toFixed(2)} €</td>
-                            <td class="td-val ${einnahmenClass}">${ein.toFixed(2)} €</td>
-                            <td class="td-val ${bilanzClass}">${bil.toFixed(2)} €</td>
-                        `;
-                        tbody.appendChild(tr);
-
-                        // Bafög-Daten (sitzt noch in der Schleife, wird in Paket 2 herausgeholt)
-                        document.getElementById('b-zahlung').innerText = d.bafoeg.zahlung.toLocaleString() + " €";
-                        document.getElementById('b-darlehen').innerText = d.bafoeg.darlehen.toLocaleString() + " €";
-                        document.getElementById('b-rueck').innerText = d.bafoeg.rueckzahlung.toLocaleString() + " €";
-                    }
-                });
-            }
-
-            // Charts am Ende des Try-Blocks
-            renderCharts(d);
-            document.getElementById('status').innerText = "";
-
+            const d = await holeAnalyse();
+            zeigeAnalyse(d);
         } catch(e) {
             document.getElementById('status').innerText = "Fehler: " + e.message;
             console.error("Analyse Fehler:", e);
         }
+    }
+
+    function zeigeAnalyse(d) {
+        const f2 = (v) => Number(v || 0).toFixed(2);
+
+        document.getElementById('anzeige-monat').innerText = d.monat + " " + d.jahr;
+        document.getElementById('ana-bilanz').innerText = f2(d.bilanz) + " €";
+        document.getElementById('ana-bilanz').style.color = d.bilanz >= 0 ? "var(--success)" : "var(--danger)";
+        
+        const nettoGesamt = parseFloat(d.nettoGesamt) || 0;
+        const prozent = d.budgetMonat > 0 ? Math.min((nettoGesamt / d.budgetMonat) * 100, 100) : 0;
+
+        const bar = document.getElementById('ana-budget-bar');
+        if (bar) {
+            bar.style.width = Math.max(0, prozent) + "%";
+            bar.style.backgroundColor = prozent < 80 ? "var(--success)" : "var(--danger)";
+        }
+        document.getElementById('ana-budget-text').innerText = Math.round(nettoGesamt) + " / " + d.budgetMonat + " €";
+
+        // Netto-Kacheln
+        const kacheln = {
+            'ana-abos': d.nettoAbos, 'ana-wohnen': d.nettoWohnen, 
+            'ana-mobil': d.nettoMobil, 'ana-bank': d.nettoBank, 
+            'ana-essen': d.nettoEssen, 'ana-allg': d.nettoAllgemein
+        };
+        for (let id in kacheln) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = f2(kacheln[id]);
+        }
+
+        // Jahrestabelle
+        const tbody = document.getElementById('jahres-tabelle-body');
+        if (tbody && Array.isArray(d.jahresUebersicht)) {
+            tbody.innerHTML = "";
+            d.jahresUebersicht.forEach(m => {
+                if (m.monat && m.monat.toString().trim() !== "") {
+                    const tr = document.createElement('tr');
+                    const aus = parseFloat(m.ausgaben) || 0;
+                    const ein = parseFloat(m.einnahmen) || 0;
+                    const bil = parseFloat(m.bilanz) || 0;
+
+                    let bilanzClass = '';
+                    if (bil >= 1) bilanzClass = 'positiv';
+                    else if (bil <= -1) bilanzClass = 'negativ';
+                    const einnahmenClass = ein >= 1 ? 'positiv' : '';
+
+                    tr.innerHTML = `
+                        <td style="font-weight:bold; color:#34495e;">${m.monat}</td>
+                        <td class="td-val">${aus.toFixed(2)} €</td>
+                        <td class="td-val ${einnahmenClass}">${ein.toFixed(2)} €</td>
+                        <td class="td-val ${bilanzClass}">${bil.toFixed(2)} €</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+        }
+
+        // Bafög (jetzt außerhalb der Monatsschleife)
+        if (d.bafoeg) {
+            document.getElementById('b-zahlung').innerText = Number(d.bafoeg.zahlung || 0).toLocaleString() + " €";
+            document.getElementById('b-darlehen').innerText = Number(d.bafoeg.darlehen || 0).toLocaleString() + " €";
+            document.getElementById('b-rueck').innerText = Number(d.bafoeg.rueckzahlung || 0).toLocaleString() + " €";
+        }
+
+        renderCharts(d);
+
+        // Hinweis, falls im Sheet Spaltennamen fehlen oder umbenannt wurden
+        document.getElementById('status').innerText =
+            (d.fehlendeSpalten && d.fehlendeSpalten.length)
+                ? "Hinweis: Diese Spalten fehlen in Zeile 7: " + d.fehlendeSpalten.join(", ")
+                : "";
     }
 
     function renderCharts(d) {
@@ -476,42 +580,62 @@
         });
     }
 
+    // ===== BUCHEN =====
+    let sendet = false; // verhindert Doppelbuchungen durch mehrfaches Tippen
+
+    function sperreButtons(sperren) {
+        document.querySelectorAll('.btn-aus, .btn-ein, .btn-umb').forEach(b => { b.disabled = sperren; });
+    }
+
     async function senden(typ) {
+        if (sendet) return;
+
         const overlay = document.getElementById('success-overlay');
         const betragField = document.getElementById('betrag');
         const zweckField = document.getElementById('zweck');
-        const isSplit = document.getElementById('split') ? document.getElementById('split').checked : false;
+        const isSplit = document.getElementById('split').checked;
 
         const data = {
             reiter: document.getElementById('reiter').value,
             ziel: document.getElementById('ziel_reiter').value,
             betrag: parseFloat(betragField.value),
-            zweck: zweckField.value || "Transfer",
-            kategorie: document.getElementById('kategorie').value || "Allgemein",
+            zweck: zweckField.value.trim() || "Transfer",
+            kategorie: document.getElementById('kategorie').value.trim() || "Allgemein",
             datum: document.getElementById('datum').value,
             split: isSplit,
             mode: typ
         };
         
-        if (isNaN(data.betrag)) return alert("Bitte Betrag eingeben!");
+        if (isNaN(data.betrag) || data.betrag <= 0) return alert("Bitte einen Betrag größer 0 eingeben!");
+        if (typ === 'umbuchung' && data.reiter === data.ziel) return alert("Quelle und Ziel sind gleich!");
+
+        sendet = true;
+        sperreButtons(true);
         document.getElementById('status').innerText = "Speichere...";
 
         try {
-            await api('buchen', data);
-            overlay.style.display = 'flex';
+            const s = await api('buchen', data);
+            zeigeStats(s); // das Script liefert die neuen Stände gleich mit
+
+            // Felder leeren, das Datum bleibt wie eingestellt
             betragField.value = "";
             zweckField.value = "";
             document.getElementById('kategorie').value = "";
-            if (document.getElementById('split')) document.getElementById('split').checked = false;
-            
+            document.getElementById('split').checked = false;
+            document.getElementById('status').innerText = "";
+            analyseZeit = 0; // Analyse beim nächsten Öffnen neu laden
+
+            overlay.style.display = 'flex';
             setTimeout(() => { 
                 overlay.style.display = 'none'; 
-                if(document.getElementById('tab-eingabe').classList.contains('active')) loadStats();
-                else ladeAnalyse();
+                if (document.getElementById('tab-analyse').classList.contains('active')) ladeAnalyse();
             }, 1200);
         } catch(e) { 
             alert("NICHT gespeichert: " + e.message); 
             document.getElementById('status').innerText = "";
+        } finally {
+            sendet = false;
+            sperreButtons(false);
         }
     }
 </script>
