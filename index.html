@@ -365,6 +365,12 @@
         }
 
         input.addEventListener('input', () => open(input.value));
+        // Am PC: Klick irgendwo ins Feld öffnet die Liste (am Handy bleibt es beim Pfeil)
+            if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+            input.addEventListener('click', () => { if (!list.classList.contains('open')) open(''); });
+        }
+            // Pfeil-nach-unten öffnet die Liste ebenfalls
+            input.addEventListener('keydown', (ev) => { if (ev.key === 'ArrowDown') open(input.value); });
         input.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') close(); });
         btn.addEventListener('click', () => { list.classList.contains('open') ? close() : open(''); });
         document.addEventListener('click', (ev) => { if (!wrap.contains(ev.target)) close(); });
