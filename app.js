@@ -22,7 +22,7 @@ const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw4ak89SrPWn9uWLhhGD
 const ZWECK_INFO = {
     "Gehalt Job Neustadt": { kategorie: "Job",     betrag: 979.97 },
     "Greenpeace":          { kategorie: "Spenden", betrag: 3.33 },
-    "Internet WG":         { kategorie: "Wohnen",  betrag: 23,98 },
+    "Internet WG":         { kategorie: "Wohnen",  betrag: 23.98 },
     "Internet WG Janika":  { kategorie: "Wohnen",  betrag: 4 },
     "Internet WG Jekabs":  { kategorie: "Wohnen",  betrag: 4 },
     "Internet WG Sarah":   { kategorie: "Wohnen",  betrag: 4 },
