@@ -108,6 +108,11 @@
 
     <!-- ===== TAB: ANALYSE ===== -->
     <div id="tab-analyse" class="tab-content">
+
+        <div class="monat-wahl-zeile">
+            <select id="monat-wahl" aria-label="Monat wählen"></select>
+        </div>
+
         <div class="gesamt-container">
             <small style="font-weight:bold; color:#7f8c8d; text-transform: uppercase; letter-spacing: 1px;">Monatsbilanz</small>
             <span id="ana-bilanz" class="gesamt-wert">0.00 €</span>
@@ -125,9 +130,14 @@
             </div>
         </div>
 
+        <div class="balken-box">
+            <canvas id="chartBalken"></canvas>
+        </div>
+        <small id="balken-hinweis" class="balken-hinweis"></small>
+
         <div class="budget-box">
             <div class="bar-text">
-                <span>Monatsbudget</span>
+                <span id="ana-budget-label">Monatsbudget</span>
                 <span id="ana-budget-text">0 / 0 €</span>
             </div>
             <div class="bar-bg">
@@ -136,8 +146,14 @@
         </div>
 
         <div class="netto-grid">
-            <div class="netto-stat"><b>Abos</b><span id="ana-abos">0</span>€</div>
-            <div class="netto-stat"><b>Wohnen</b><span id="ana-wohnen">0</span>€</div>
+            <div class="netto-stat">
+                <b>Abos</b><span id="ana-abos">0</span>€
+                <div class="haken-liste" id="haken-abos"></div>
+            </div>
+            <div class="netto-stat">
+                <b>Wohnen</b><span id="ana-wohnen">0</span>€
+                <div class="haken-liste" id="haken-wohnen"></div>
+            </div>
             <div class="netto-stat"><b>Fortbewegung</b><span id="ana-mobil">0</span>€</div>
             <div class="netto-stat"><b>Bank</b><span id="ana-bank">0</span>€</div>
             <div class="netto-stat"><b>Essen</b><span id="ana-essen">0</span>€</div>
