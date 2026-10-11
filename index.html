@@ -109,14 +109,12 @@
     <!-- ===== TAB: ANALYSE ===== -->
     <div id="tab-analyse" class="tab-content">
 
-        <div class="monat-wahl-zeile">
-            <select id="monat-wahl" aria-label="Monat wählen"></select>
-        </div>
-
         <div class="gesamt-container">
-            <small style="font-weight:bold; color:#7f8c8d; text-transform: uppercase; letter-spacing: 1px;">Monatsbilanz</small>
+            <small id="ana-bilanz-label" style="font-weight:bold; color:#7f8c8d; text-transform: uppercase; letter-spacing: 1px;">Monatsbilanz</small>
             <span id="ana-bilanz" class="gesamt-wert">0.00 €</span>
-            <small id="anzeige-monat">Monat laden...</small>
+            <div class="monat-wahl-zeile">
+                <select id="monat-wahl" aria-label="Monat wählen"></select>
+            </div>
         </div>
 
         <div class="chart-zeile">
@@ -158,6 +156,11 @@
             <div class="netto-stat"><b>Bank</b><span id="ana-bank">0</span>€</div>
             <div class="netto-stat"><b>Essen</b><span id="ana-essen">0</span>€</div>
             <div class="netto-stat"><b>Allgemein</b><span id="ana-allg">0</span>€</div>
+        </div>
+
+        <div class="tabelle-kopf">
+            <small>Jahresübersicht</small>
+            <select id="tabellen-jahr" aria-label="Jahr wählen"></select>
         </div>
 
         <table class="uebersicht-table">
